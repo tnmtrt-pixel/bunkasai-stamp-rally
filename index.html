@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>文化祭スタンプラリー</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+/* Layout: 一枚の台紙。上に進捗、16個のスタンプ枠（4列）、枠をタップすると係用の押印パネル */
+:root{
+  --paper:#eef2f4; --card:#fbfcfc; --ink:#1d2a3a; --muted:#5e6c7b;
+  --line:#c9d3db; --shu:#d8432e; --ai:#26457a; --veil:rgba(20,30,45,.55);
+  --display:"Dela Gothic One","Hiragino Sans",sans-serif;
+  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#141a22; --card:#1c2430; --ink:#e7edf3; --muted:#9aa8b6;
+  --line:#33404f; --shu:#ff6a52; --ai:#8fb0ea; --veil:rgba(0,0,0,.65); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141a22; --card:#1c2430; --ink:#e7edf3; --muted:#9aa8b6;
+  --line:#33404f; --shu:#ff6a52; --ai:#8fb0ea; --veil:rgba(0,0,0,.65); color-scheme:dark}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:18px}
+header{display:grid;gap:4px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted)}
+h1{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.2;margin:0;text-wrap:balance;color:var(--ai)}
+.lead{font-size:13px;color:var(--muted);margin:0}
+.progress{display:flex;align-items:center;gap:12px}
+.bar{flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar span{display:block;height:100%;background:var(--shu);transition:width .5s}
+.count{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--shu)}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px}
+.slot{display:grid;justify-items:center;align-content:start;gap:4px;text-align:center;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;min-width:0}
+.slot:focus-visible .circle{outline:3px solid var(--ai);outline-offset:3px}
+.circle{width:100%;max-width:84px;aspect-ratio:1;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;position:relative}
+.circle .no{font-family:var(--display);font-size:clamp(12px,3.6vw,18px);color:var(--muted);opacity:.7;padding:0 4px;line-height:1.15;word-break:keep-all}
+.slot.got .circle{border-color:transparent}
+.stamp{position:absolute;inset:3px;border-radius:50%;border:3px double var(--shu);color:var(--shu);display:grid;place-items:center;
+  font-family:var(--display);font-size:clamp(10px,3vw,14px);line-height:1.15;transform:rotate(-12deg);
+  background:color-mix(in srgb,var(--shu) 8%,transparent);padding:4px;word-break:keep-all}
+.stamp small{display:block;font-family:var(--body);font-size:9px;font-weight:700;margin-top:2px}
+.slot.new .stamp{animation:press .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes press{0%{transform:rotate(-12deg) scale(1.8);opacity:0}100%{transform:rotate(-12deg) scale(1);opacity:1}}
+.slot .name{font-size:11px;font-weight:700;line-height:1.25;word-break:keep-all;overflow-wrap:anywhere}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:4px;font-size:13px}
+.howto strong{font-size:14px}
+.howto ol{margin:0;padding-left:1.3em;color:var(--muted)}
+.goal{background:var(--shu);color:#fff;border-radius:14px;padding:20px;display:grid;gap:6px;text-align:center}
+.goal h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.goal .time{font-family:var(--display);font-size:18px;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.18);border-radius:8px;padding:6px}
+button.ghost{font:inherit;font-size:12px;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;justify-self:center}
+button.ghost:focus-visible{outline:2px solid var(--ai)}
+/* 係用パネル */
+.veil{position:fixed;inset:0;background:var(--veil);display:grid;align-items:end;justify-items:center;z-index:10;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.staff{background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:420px;display:grid;gap:12px}
+.staff .tag{font-size:12px;letter-spacing:.1em;color:var(--muted)}
+.staff h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;color:var(--ai)}
+.staff p{margin:0;font-size:13px;color:var(--muted)}
+.staff input{font:inherit;font-family:var(--display);font-size:28px;letter-spacing:.5em;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%;box-sizing:border-box}
+.staff input:focus-visible{outline:2px solid var(--ai)}
+.btns{display:flex;gap:8px}
+.btns button{flex:1;font:inherit;font-weight:700;padding:12px;border-radius:10px;cursor:pointer}
+.ok{background:var(--shu);color:#fff;border:0}
+.cancel{background:none;border:1px solid var(--line);color:var(--ink)}
+.btns button:focus-visible{outline:3px solid var(--ai);outline-offset:2px}
+.err{font-size:13px;font-weight:700;color:var(--shu);min-height:1.4em}
+.toast{position:fixed;width:max-content;max-width:calc(100% - 32px);text-align:center;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:20}
+@media (prefers-reduced-motion:reduce){.slot.new .stamp{animation:none}.bar span{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">STAMP RALLY</div>
+    <h1>文化祭スタンプラリー</h1>
+    <p class="lead">全16か所。すべて集めたら受付でこの画面を見せてください。</p>
+  </header>
+
+  <div class="progress" aria-live="polite">
+    <div class="bar"><span id="bar"></span></div>
+    <div class="count"><span id="got">0</span>/<span id="total">16</span></div>
+  </div>
+
+  <div class="goal" id="goal" hidden>
+    <h2>コンプリート！</h2>
+    <div>受付でこの画面を見せてください</div>
+    <div class="time" id="ctime"></div>
+  </div>
+
+  <div class="sheet" id="sheet"></div>
+
+  <div class="howto">
+    <strong>スタンプのもらい方</strong>
+    <ol>
+      <li>教室に置いてある画面のQRコードを、スマホのカメラで読み取る</li>
+      <li>開いたページでスタンプが押されます</li>
+    </ol>
+    <span style="color:var(--muted)">QRが読めないときは、教室の枠をタップしてスマホを係の人に渡してください。</span>
+    <span style="color:var(--muted)">ホーム画面に追加せず、カメラから開いたブラウザのまま使ってください。</span>
+  </div>
+
+  <button class="ghost" id="reset" type="button">記録をリセット</button>
+</div>
+
+<div class="veil" id="veil" hidden>
+  <form class="staff" id="staff" autocomplete="off">
+    <div class="tag">係の人が入力してください</div>
+    <h2 id="sname"></h2>
+    <p>この教室の係用番号（4桁）を入力してください。</p>
+    <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="係用番号">
+    <div class="err" id="err" role="status"></div>
+    <div class="btns">
+      <button type="button" class="cancel" id="cancel">やめる</button>
+      <button type="submit" class="ok" id="okbtn">押す</button>
+    </div>
+  </form>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="config.js"></script>
+<script>
+const SPOTS=RALLY.spots;
+const KEY="bunkasai-rally-2026";
+const $=id=>document.getElementById(id);
+let stamps={};
+try{stamps=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){stamps={}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(stamps))}catch(e){}};
+const fmt=t=>{const d=new Date(t);return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+const label=n=>n.replace("学年展示","学年\n展示").replace("工業科展示","工業科\n展示");
+
+function render(newId){
+  const sheet=$("sheet");sheet.innerHTML="";
+  SPOTS.forEach(s=>{
+    const got=stamps[s.id];
+    const b=document.createElement("button");b.type="button";
+    b.className="slot"+(got?" got":"")+(newId===s.id?" new":"");
+    b.setAttribute("aria-label",s.name+(got?"（押印済み）":"（未押印）"));
+    const t=label(s.name).replace("\n","<br>");
+    b.innerHTML=`<div class="circle">${got?`<div class="stamp"><div>${t}<small>${fmt(got)}</small></div></div>`:`<span class="no">${t}</span>`}</div>`;
+    b.onclick=()=>openStaff(s);
+    sheet.appendChild(b);
+  });
+  const n=Object.keys(stamps).length;
+  $("got").textContent=n;$("total").textContent=SPOTS.length;
+  $("bar").style.width=(n/SPOTS.length*100)+"%";
+  $("goal").hidden=n<SPOTS.length;
+  if(n===SPOTS.length){const last=Math.max(...Object.values(stamps));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
+}
+function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200)}
+
+let current=null,fails=0,lockUntil=0;
+function openStaff(s){
+  if(stamps[s.id]){toast(`${s.name} はもう押してあります`);return}
+  current=s;$("sname").textContent=s.name;$("pin").value="";$("err").textContent="";
+  $("veil").hidden=false;setTimeout(()=>$("pin").focus(),50);
+}
+function closeStaff(){$("veil").hidden=true;current=null}
+$("cancel").onclick=closeStaff;
+$("veil").addEventListener("click",e=>{if(e.target.id==="veil")closeStaff()});
+$("staff").addEventListener("submit",async e=>{
+  e.preventDefault();if(!current)return;
+  const now=Date.now();
+  if(now<lockUntil){$("err").textContent=`間違いが続いたので ${Math.ceil((lockUntil-now)/1000)} 秒待ってください`;return}
+  const p=$("pin").value.trim();
+  if(!/^\d{4}$/.test(p)){$("err").textContent="4桁の数字を入力してください";return}
+  let ok=false;try{ok=await RALLY.checkPin(current,p)}catch(err){$("err").textContent="この画面ではスタンプを押せません。ページを開き直してください";return}
+  if(!ok){
+    fails++;$("pin").value="";
+    if(fails>=5){lockUntil=Date.now()+30000;fails=0;$("err").textContent="間違いが続いたので30秒待ってください"}
+    else $("err").textContent="番号が違います";
+    return;
+  }
+  fails=0;stamps[current.id]=Date.now();save();
+  const s=current;closeStaff();render(s.id);toast(`${s.name} のスタンプを押しました`);
+});
+let armed=false;
+$("reset").addEventListener("click",e=>{
+  if(!armed){armed=true;e.target.textContent="もう一度押すと全部消えます";setTimeout(()=>{armed=false;e.target.textContent="記録をリセット"},3000);return}
+  stamps={};save();armed=false;e.target.textContent="記録をリセット";render();
+});
+render();
+(async()=>{
+  const q=new URLSearchParams(location.search);
+  if(!q.has("s"))return;
+  try{history.replaceState(null,"",location.pathname)}catch(e){}
+  const spot=SPOTS.find(x=>String(x.id)===q.get("s"));
+  const w=parseInt(q.get("w"),10),c=q.get("c")||"";
+  if(!spot||!w){toast("このQRコードは使えません");return}
+  if(stamps[spot.id]){toast(`${spot.name} はもう押してあります`);return}
+  const now=RALLY.win();
+  if(w>now+1||w<now-RALLY.accept){toast("QRの期限が切れています。もう一度読み取ってください");return}
+  let ok=false;try{ok=(await RALLY.code(spot,w))===c}catch(e){}
+  if(!ok){toast("このQRコードは使えません");return}
+  stamps[spot.id]=Date.now();save();render(spot.id);toast(`${spot.name} のスタンプを押しました`);
+})();
+</script>
