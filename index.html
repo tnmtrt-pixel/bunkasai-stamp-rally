@@ -130,6 +130,18 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .menu td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;padding-left:12px}
 .shop .note{font-size:12px;color:var(--muted)}
 .shop .go{font:inherit;font-size:13px;font-weight:700;background:none;border:0;padding:0;color:var(--ai);text-decoration:underline;cursor:pointer;justify-self:start}
+/* 景品 */
+.goal .now{font-size:13px;font-variant-numeric:tabular-nums;opacity:.9}
+.goal .give{font:inherit;font-weight:700;font-size:15px;padding:12px;border-radius:10px;border:2px solid #fff;background:#fff;color:#b8321f;cursor:pointer;margin-top:4px}
+.goal .give:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.goal.done{background:var(--card);color:var(--ink);border:2px solid var(--line)}
+.goal.done h2{color:var(--muted)}
+.seal{justify-self:center;width:120px;height:120px;border-radius:50%;border:4px double var(--shu);color:var(--shu);display:grid;place-items:center;
+  font-family:var(--display);font-size:20px;line-height:1.2;transform:rotate(-10deg);margin:6px 0}
+.seal small{display:block;font-family:var(--body);font-size:11px;font-weight:700}
+@keyframes livebar{from{background-position:0 0}to{background-position:40px 0}}
+.live{height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.9) 0 10px,rgba(255,255,255,.3) 10px 20px);background-size:40px 6px;animation:livebar 1s linear infinite}
+@media (prefers-reduced-motion:reduce){.live{animation:none}}
 @media (prefers-reduced-motion:reduce){.slot.new .stamp{animation:none}.bar span{transition:none}}
 </style>
 
@@ -152,9 +164,19 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   </div>
 
   <div class="goal" id="goal" hidden>
-    <h2>コンプリート！</h2>
-    <div>受付でこの画面を見せてください</div>
-    <div class="time" id="ctime"></div>
+    <div id="goal-open" class="pane" style="gap:6px">
+      <h2>コンプリート！</h2>
+      <div>受付でこの画面を見せて、景品を受け取ってください</div>
+      <div class="time" id="ctime"></div>
+      <div class="live" aria-hidden="true"></div>
+      <div class="now" id="now"></div>
+      <button type="button" class="give" id="give">受付の人が押す：景品を渡す</button>
+    </div>
+    <div id="goal-done" class="pane" style="gap:6px" hidden>
+      <h2>景品は受け取り済みです</h2>
+      <div class="seal"><div>受取済<small id="ptime"></small></div></div>
+      <div class="now">ご参加ありがとうございました！</div>
+    </div>
   </div>
 
   <section class="pane" id="pane-sheet" role="tabpanel" aria-labelledby="tab-sheet">
@@ -204,11 +226,11 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 
 <div class="veil" id="veil" hidden>
   <form class="staff" id="staff" autocomplete="off">
-    <div class="tag">係の人が入力してください</div>
+    <div class="tag" id="stag">係の人が入力してください</div>
     <h2 id="sname"></h2>
     <div class="where" id="swhere"></div>
     <button type="button" class="maplink" id="smap">地図で場所を見る</button>
-    <p>この教室の係用番号（4桁）を入力してください。</p>
+    <p id="sdesc">この教室の係用番号（4桁）を入力してください。</p>
     <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="係用番号">
     <div class="err" id="err" role="status"></div>
     <div class="btns">
@@ -224,6 +246,9 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 <script>
 const SPOTS=RALLY.spots;
 const KEY="bunkasai-rally-2026";
+const PKEY="bunkasai-rally-2026-prize";  // 記録をリセットしても消えない
+let prize=null;
+try{prize=JSON.parse(localStorage.getItem(PKEY))}catch(e){prize=null}
 const $=id=>document.getElementById(id);
 let stamps={};
 try{stamps=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){stamps={}}
@@ -265,9 +290,13 @@ function render(newId){
   const n=Object.keys(stamps).length;
   $("got").textContent=n;$("total").textContent=SPOTS.length;
   $("bar").style.width=(n/SPOTS.length*100)+"%";
-  $("goal").hidden=n<SPOTS.length;
   renderMap();renderShops();
-  if(n===SPOTS.length){const last=Math.max(...Object.values(stamps));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
+  const full=n===SPOTS.length;
+  $("goal").hidden=!(full||prize);
+  $("goal").classList.toggle("done",!!prize);
+  $("goal-open").hidden=!!prize;$("goal-done").hidden=!prize;
+  if(prize){const d=new Date(prize);$("ptime").textContent=`${d.getMonth()+1}/${d.getDate()} ${fmt(prize)}`}
+  else if(full){const last=Math.max(...Object.values(stamps));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
 }
 let selId=null;
 function renderMap(){
@@ -337,8 +366,13 @@ function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout
 
 let current=null,fails=0,lockUntil=0;
 function openStaff(s){
-  if(stamps[s.id]){toast(`${s.name} はもう押してあります`);return}
-  current=s;$("sname").textContent=s.name;
+  if(s.id!=="desk"&&stamps[s.id]){toast(`${s.name} はもう押してあります`);return}
+  const desk=s.id==="desk";
+  $("stag").textContent=desk?"受付の人が入力してください":"係の人が入力してください";
+  $("sdesc").textContent=desk?"受付用番号（4桁）を入力すると、景品を受け取り済みにします。":"この教室の係用番号（4桁）を入力してください。";
+  $("okbtn").textContent=desk?"受取済みにする":"押す";
+  $("smap").hidden=desk;
+  current=s;$("sname").textContent=desk?"景品の受け取り":s.name;
   const f=INFO[s.name];$("swhere").textContent=f?`${f.ev} ／ ${f.at}`:"";$("pin").value="";$("err").textContent="";
   $("veil").hidden=false;setTimeout(()=>$("pin").focus(),50);
 }
@@ -359,7 +393,12 @@ $("staff").addEventListener("submit",async e=>{
     else $("err").textContent="番号が違います";
     return;
   }
-  fails=0;stamps[current.id]=Date.now();save();
+  fails=0;
+  if(current.id==="desk"){
+    prize=Date.now();try{localStorage.setItem(PKEY,JSON.stringify(prize))}catch(e){}
+    closeStaff();render();window.scrollTo({top:0,behavior:"smooth"});toast("受け取り済みにしました");return;
+  }
+  stamps[current.id]=Date.now();save();
   const s=current;closeStaff();render(s.id);toast(`${s.name} のスタンプを押しました`);
 });
 let armed=false;
@@ -367,6 +406,8 @@ $("reset").addEventListener("click",e=>{
   if(!armed){armed=true;e.target.textContent="もう一度押すと全部消えます";setTimeout(()=>{armed=false;e.target.textContent="記録をリセット"},3000);return}
   stamps={};save();armed=false;e.target.textContent="記録をリセット";render();
 });
+$("give").onclick=()=>openStaff(RALLY.desk);
+setInterval(()=>{const d=new Date();$("now").textContent=`いまの時刻 ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`},1000);
 render();
 (async()=>{
   const q=new URLSearchParams(location.search);
