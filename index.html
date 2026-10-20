@@ -70,7 +70,7 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .err{font-size:13px;font-weight:700;color:var(--shu);min-height:1.4em}
 .toast{position:fixed;width:max-content;max-width:calc(100% - 32px);text-align:center;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:20}
 /* タブ */
-.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .tabs button{font:inherit;font-weight:700;font-size:15px;padding:9px;border:0;border-radius:9px;background:none;color:var(--muted);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--ai);color:var(--card)}
 .tabs button:focus-visible{outline:3px solid var(--shu);outline-offset:1px}
@@ -107,6 +107,29 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .chips .done{font-size:13px;color:var(--muted)}
 .staff .where{font-size:13px;color:var(--ink);font-weight:700}
 .staff .maplink{font:inherit;font-size:13px;background:none;border:0;padding:0;color:var(--ai);text-decoration:underline;cursor:pointer;justify-self:start}
+/* 出し物 */
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.filters button:focus-visible,.shop button:focus-visible{outline:3px solid var(--shu);outline-offset:2px}
+.shops{display:grid;gap:10px}
+.shop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:6px;min-width:0}
+.shop .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.shop .by{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.shop h3{font-size:17px;line-height:1.35;margin:0;color:var(--ink)}
+.badge{flex:none;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.badge.got{background:var(--shu);color:#fff}
+.badge.not{border:1px solid var(--ai);color:var(--ai)}
+.badge.none{border:1px solid var(--line);color:var(--muted)}
+.shop .at{font-size:13px;color:var(--muted)}
+.shop .cat{display:inline-block;font-size:11px;font-weight:700;color:var(--ai);margin-right:6px}
+.shop p{margin:0;font-size:14px}
+.shop p.empty{color:var(--muted);font-size:13px}
+.menu{width:100%;border-collapse:collapse;font-size:14px}
+.menu td{padding:4px 0;border-bottom:1px dashed var(--line)}
+.menu td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;padding-left:12px}
+.shop .note{font-size:12px;color:var(--muted)}
+.shop .go{font:inherit;font-size:13px;font-weight:700;background:none;border:0;padding:0;color:var(--ai);text-decoration:underline;cursor:pointer;justify-self:start}
 @media (prefers-reduced-motion:reduce){.slot.new .stamp{animation:none}.bar span{transition:none}}
 </style>
 
@@ -120,9 +143,10 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   <div class="tabs" role="tablist">
     <button type="button" role="tab" id="tab-sheet" aria-selected="true" aria-controls="pane-sheet">台紙</button>
     <button type="button" role="tab" id="tab-map" aria-selected="false" aria-controls="pane-map">マップ</button>
+    <button type="button" role="tab" id="tab-shops" aria-selected="false" aria-controls="pane-shops">出し物</button>
   </div>
 
-  <div class="progress" aria-live="polite">
+  <div class="progress" id="progress" aria-live="polite">
     <div class="bar"><span id="bar"></span></div>
     <div class="count"><span id="got">0</span>/<span id="total">16</span></div>
   </div>
@@ -166,6 +190,16 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
       <div class="chips" id="chips"></div>
     </div>
   </section>
+
+  <section class="pane" id="pane-shops" role="tabpanel" aria-labelledby="tab-shops" hidden>
+    <div class="filters" role="group" aria-label="種類でしぼりこむ">
+      <button type="button" data-c="all" aria-pressed="true">すべて</button>
+      <button type="button" data-c="food" aria-pressed="false">食べ物</button>
+      <button type="button" data-c="play" aria-pressed="false">遊び</button>
+      <button type="button" data-c="show" aria-pressed="false">展示・ステージ</button>
+    </div>
+    <div class="shops" id="shops"></div>
+  </section>
 </div>
 
 <div class="veil" id="veil" hidden>
@@ -186,6 +220,7 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 <div class="toast" id="toast" hidden></div>
 
 <script src="config.js"></script>
+<script src="shops.js"></script>
 <script>
 const SPOTS=RALLY.spots;
 const KEY="bunkasai-rally-2026";
@@ -231,7 +266,7 @@ function render(newId){
   $("got").textContent=n;$("total").textContent=SPOTS.length;
   $("bar").style.width=(n/SPOTS.length*100)+"%";
   $("goal").hidden=n<SPOTS.length;
-  renderMap();
+  renderMap();renderShops();
   if(n===SPOTS.length){const last=Math.max(...Object.values(stamps));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
 }
 let selId=null;
@@ -266,12 +301,33 @@ function select(s,scroll){
   if(scroll)sc.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function showTab(name){
-  const map=name==="map";
-  $("tab-sheet").setAttribute("aria-selected",!map);$("tab-map").setAttribute("aria-selected",map);
-  $("pane-sheet").hidden=map;$("pane-map").hidden=!map;
+  ["sheet","map","shops"].forEach(t=>{$("tab-"+t).setAttribute("aria-selected",t===name);$("pane-"+t).hidden=t!==name});
+  $("progress").hidden=name==="shops";
 }
-$("tab-sheet").onclick=()=>showTab("sheet");
-$("tab-map").onclick=()=>showTab("map");
+["sheet","map","shops"].forEach(t=>$("tab-"+t).onclick=()=>showTab(t));
+const CAT={food:"食べ物",play:"遊び",show:"展示・ステージ"};
+let shopCat="all";
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function renderShops(){
+  const list=$("shops");list.innerHTML="";
+  (window.SHOPS||[]).filter(x=>shopCat==="all"||x.cat===shopCat).forEach(x=>{
+    const spot=x.rally?SPOTS.find(s=>s.name===x.rally):null;
+    const got=spot&&stamps[spot.id];
+    const badge=!spot?'<span class="badge none">スタンプなし</span>':got?'<span class="badge got">スタンプ済み</span>':'<span class="badge not">スタンプあり</span>';
+    const el=document.createElement("article");el.className="shop";
+    el.innerHTML=`<div class="top"><div><div class="by">${esc(x.by)}</div><h3>${esc(x.title)}</h3></div>${badge}</div>
+      <div class="at"><span class="cat">${CAT[x.cat]||""}</span>${esc(x.at)}</div>
+      ${x.desc?`<p>${esc(x.desc).replace(/\n/g,"<br>")}</p>`:'<p class="empty">紹介文は準備中です</p>'}
+      ${x.menu&&x.menu.length?`<table class="menu">${x.menu.map(m=>`<tr><td>${esc(m[0])}</td><td>${esc(m[1])}</td></tr>`).join("")}</table>`:""}
+      ${x.note?`<div class="note">${esc(x.note)}</div>`:""}
+      ${spot?'<button type="button" class="go">地図で見る</button>':""}`;
+    if(spot)el.querySelector(".go").onclick=()=>{showTab("map");select(spot);window.scrollTo({top:0,behavior:"smooth"})};
+    list.appendChild(el);
+  });
+}
+document.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{
+  shopCat=b.dataset.c;document.querySelectorAll(".filters button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderShops();
+});
 document.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".zoom button").forEach(x=>x.setAttribute("aria-pressed",x===b));
   $("mapbox").style.width=(b.dataset.z==="2"?"250%":"100%");$("mapbox").classList.toggle("z2",b.dataset.z==="2");
