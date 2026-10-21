@@ -166,6 +166,21 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .vinfo .ev{font-weight:700}
 .vinfo .wh{font-size:13px;color:var(--muted)}
 .vinfo .st{font-size:12px;font-weight:700;color:var(--shu)}
+/* QR読み取り */
+.scanbtn{font:inherit;font-family:var(--display);font-size:20px;padding:14px;border-radius:14px;border:0;background:var(--ai);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.scanbtn:focus-visible{outline:3px solid var(--shu);outline-offset:2px}
+.scanbtn svg{width:26px;height:26px}
+.warnbox{background:var(--card);border:2px solid var(--shu);border-radius:14px;padding:12px 14px;font-size:13px;display:grid;gap:4px}
+.warnbox strong{color:var(--shu);font-size:14px}
+.scanner{position:fixed;inset:0;z-index:30;background:#10151c;color:#fff;display:grid;grid-template-rows:auto 1fr auto;
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));gap:12px}
+.scanner .shead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.scanner .shead strong{font-size:15px;min-width:0}
+.scanner .shead button{flex:none;white-space:nowrap;font:inherit;font-weight:700;font-size:15px;padding:8px 14px;border-radius:10px;border:0;background:#fff;color:#10151c;cursor:pointer}
+.scanner .sview{position:relative;display:grid;place-items:center;min-height:0;overflow:hidden;border-radius:14px;background:#000}
+.scanner video{width:100%;height:100%;object-fit:cover}
+.scanner .frame{position:absolute;width:min(70vw,60vh,320px);aspect-ratio:1;border:4px solid #fff;border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
+.scanner .smsg{font-size:14px;font-weight:700;text-align:center;min-height:1.5em}
 @media (prefers-reduced-motion:reduce){.live{animation:none}}
 @media (prefers-reduced-motion:reduce){.slot.new .stamp{animation:none}.bar span{transition:none}}
 </style>
@@ -181,6 +196,11 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
     <button type="button" role="tab" id="tab-sheet" aria-selected="true" aria-controls="pane-sheet">台紙</button>
     <button type="button" role="tab" id="tab-map" aria-selected="false" aria-controls="pane-map">マップ</button>
     <button type="button" role="tab" id="tab-shops" aria-selected="false" aria-controls="pane-shops">出し物</button>
+  </div>
+
+  <div class="warnbox" id="inapp" hidden>
+    <strong>Safari（またはChrome）で開き直してください</strong>
+    <span>LINEなどのアプリの中で開いていると、スタンプが消えてしまうことがあります。右上のメニューから「ブラウザで開く」を選んでください。</span>
   </div>
 
   <div class="progress" id="progress" aria-live="polite">
@@ -205,16 +225,17 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   </div>
 
   <section class="pane" id="pane-sheet" role="tabpanel" aria-labelledby="tab-sheet">
+  <button type="button" class="scanbtn" id="scanopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M7 12h10"/></svg>QRを読み取る</button>
   <div class="sheet" id="sheet"></div>
 
   <div class="howto">
     <strong>スタンプのもらい方</strong>
     <ol>
-      <li>教室に置いてある画面のQRコードを、スマホのカメラで読み取る</li>
-      <li>開いたページでスタンプが押されます</li>
+      <li>上の「QRを読み取る」を押す（はじめにカメラの許可を聞かれたら「許可」）</li>
+      <li>教室に置いてある画面のQRコードを枠に入れると、スタンプが押されます</li>
     </ol>
     <span style="color:var(--muted)">QRが読めないときは、教室の枠をタップしてスマホを係の人に渡してください。</span>
-    <span style="color:var(--muted)">ホーム画面に追加せず、カメラから開いたブラウザのまま使ってください。</span>
+    <span style="color:var(--muted)">プライベートブラウズやLINEの中ではスタンプが消えることがあります。いつものSafariやChromeで、このページを開いたまま回ってください。</span>
   </div>
 
   <button class="ghost" id="reset" type="button">記録をリセット</button>
@@ -278,8 +299,14 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   <div class="vhint" id="vhint">2本指で拡大・ドラッグで移動</div>
   <div class="vinfo" id="vinfo" hidden></div>
 </div>
+<div class="scanner" id="scanner" hidden role="dialog" aria-modal="true" aria-label="QRコードの読み取り">
+  <div class="shead"><strong>教室のQRコードを枠に入れてください</strong><button type="button" id="scanclose">やめる</button></div>
+  <div class="sview"><video id="video" playsinline muted></video><div class="frame" aria-hidden="true"></div></div>
+  <div class="smsg" id="smsg" role="status">カメラを準備しています…</div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="config.js"></script>
 <script src="shops.js"></script>
 <script>
@@ -291,7 +318,10 @@ try{prize=JSON.parse(localStorage.getItem(PKEY))}catch(e){prize=null}
 const $=id=>document.getElementById(id);
 let stamps={};
 try{stamps=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){stamps={}}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(stamps))}catch(e){}};
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}};
+// 保存の前に、ほかのタブで押した分とまとめる（リセット直後は除く）
+let resetting=false;
+const save=()=>{try{const cur=resetting?{}:load();for(const k in cur)if(!stamps[k])stamps[k]=cur[k];localStorage.setItem(KEY,JSON.stringify(stamps))}catch(e){}};
 const fmt=t=>{const d=new Date(t);return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
 // 地図上の位置（画像に対する%）と案内
 const INFO={
@@ -522,15 +552,20 @@ $("staff").addEventListener("submit",async e=>{
 let armed=false;
 $("reset").addEventListener("click",e=>{
   if(!armed){armed=true;e.target.textContent="もう一度押すと全部消えます";setTimeout(()=>{armed=false;e.target.textContent="記録をリセット"},3000);return}
-  stamps={};save();armed=false;e.target.textContent="記録をリセット";render();
+  stamps={};resetting=true;save();resetting=false;armed=false;e.target.textContent="記録をリセット";render();
 });
 $("give").onclick=()=>openStaff(RALLY.desk);
 setInterval(()=>{const d=new Date();$("now").textContent=`いまの時刻 ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`},1000);
 render();
-(async()=>{
-  const q=new URLSearchParams(location.search);
-  if(!q.has("s"))return;
-  try{history.replaceState(null,"",location.pathname)}catch(e){}
+// ほかのタブで押したスタンプを反映
+function syncStamps(){const cur=load();let ch=false;for(const k in cur)if(!stamps[k]){stamps[k]=cur[k];ch=true}if(ch)render()}
+addEventListener("storage",e=>{if(e.key===KEY)syncStamps()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncStamps()});
+// LINE・Instagramなどのアプリ内ブラウザを検出
+if(/Line\/|Instagram|FBAN|FBAV|MicroMessenger|Twitter/i.test(navigator.userAgent))$("inapp").hidden=false;
+
+// QRの中身（s,w,c）を確かめてスタンプを押す
+async function stampFromQR(q){
   const spot=SPOTS.find(x=>String(x.id)===q.get("s"));
   const w=parseInt(q.get("w"),10),c=q.get("c")||"";
   if(!spot||!w){toast("このQRコードは使えません");return}
@@ -540,5 +575,51 @@ render();
   let ok=false;try{ok=(await RALLY.code(spot,w))===c}catch(e){}
   if(!ok){toast("このQRコードは使えません");return}
   stamps[spot.id]=Date.now();save();render(spot.id);toast(`${spot.name} のスタンプを押しました`);
+}
+(()=>{
+  const q=new URLSearchParams(location.search);
+  if(!q.has("s"))return;
+  try{history.replaceState(null,"",location.pathname)}catch(e){}
+  stampFromQR(q);
 })();
+
+// ===== ページ内でQRを読み取る =====
+let stream=null,scanning=false;
+const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
+async function openScanner(){
+  if(typeof jsQR!=="function"){toast("読み取りの準備ができていません。通信を確認して開き直してください");return}
+  $("scanner").hidden=false;document.body.style.overflow="hidden";$("smsg").textContent="カメラを準備しています…";
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+  }catch(e){
+    $("smsg").textContent="カメラを使えません。設定でカメラを許可するか、スマホのカメラアプリでQRを読み取ってください";return;
+  }
+  const v=$("video");v.srcObject=stream;try{await v.play()}catch(e){}
+  $("smsg").textContent="QRコードを枠の中に写してください";scanning=true;requestAnimationFrame(scanLoop);
+}
+function closeScanner(){
+  scanning=false;$("scanner").hidden=true;document.body.style.overflow="";
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+}
+let lastScan=0;
+function scanLoop(t){
+  if(!scanning)return;
+  const v=$("video");
+  if(v.readyState>=2&&t-lastScan>150){
+    lastScan=t;
+    const w=v.videoWidth,h=v.videoHeight,sc=Math.min(1,640/Math.max(w,h));
+    cv.width=Math.round(w*sc);cv.height=Math.round(h*sc);
+    cx.drawImage(v,0,0,cv.width,cv.height);
+    const code=jsQR(cx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height,{inversionAttempts:"dontInvert"});
+    if(code&&code.data){
+      let u=null;try{u=new URL(code.data)}catch(e){}
+      if(u&&u.searchParams.has("s")&&u.searchParams.has("c")){closeScanner();stampFromQR(u.searchParams);return}
+      $("smsg").textContent="スタンプラリーのQRコードではありません";
+    }
+  }
+  requestAnimationFrame(scanLoop);
+}
+$("scanopen").onclick=openScanner;
+$("scanclose").onclick=closeScanner;
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&scanning)closeScanner()});
 </script>
