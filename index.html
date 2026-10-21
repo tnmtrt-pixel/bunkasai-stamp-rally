@@ -81,15 +81,11 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:4px}
 .legend .l-got{background:var(--shu)}
 .legend .l-not{background:var(--card);border:2px solid var(--ai)}
-.zoom{display:flex;gap:4px}
-.zoom button{font:inherit;font-weight:700;font-size:13px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
-.zoom button[aria-pressed="true"]{border-color:var(--ai);color:var(--ai)}
 .mapscroll{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch;max-height:75vh}
 .mapbox{position:relative;width:100%;line-height:0}
 .mapbox img{width:100%;height:auto;max-width:none;display:block}
 .pin{position:absolute;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;border:2px solid var(--ai);background:rgba(255,255,255,.92);color:var(--ai);
   font:700 8px/11px var(--body);text-align:center;padding:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25)}
-.mapbox.z2 .pin{width:24px;height:24px;font-size:12px;line-height:20px}
 .pin::after{content:"";position:absolute;inset:-10px}
 .pin.got{background:#d8432e;border-color:#fff;color:#fff}
 .pin.sel{outline:3px solid #f5b800;outline-offset:2px;z-index:2}
@@ -141,6 +137,35 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .seal small{display:block;font-family:var(--body);font-size:11px;font-weight:700}
 @keyframes livebar{from{background-position:0 0}to{background-position:40px 0}}
 .live{height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.9) 0 10px,rgba(255,255,255,.3) 10px 20px);background-size:40px 6px;animation:livebar 1s linear infinite}
+/* 全画面マップ */
+.mapscroll{position:relative}
+.mapbox img{cursor:zoom-in}
+.fsbtn{font:inherit;font-weight:700;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid var(--ai);background:var(--card);color:var(--ai);cursor:pointer}
+.fsbtn:focus-visible{outline:3px solid var(--shu);outline-offset:2px}
+.mapcorner{position:absolute;right:8px;bottom:8px;font:700 12px var(--body);padding:5px 9px;border-radius:999px;background:rgba(29,42,58,.82);color:#fff;border:0;cursor:pointer;line-height:1.2}
+.viewer{position:fixed;inset:0;z-index:30;background:#10151c;overflow:hidden}
+.vstage{position:absolute;inset:0;touch-action:none;overflow:hidden}
+.vmove{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.vrot{position:relative}
+.vrot .mapbox{position:absolute;left:0;top:0;transform-origin:0 0;background:#fff}
+.vrot .mapbox img{width:100%;height:100%;cursor:grab;-webkit-user-drag:none;user-select:none}
+.viewer .pin{width:22px;height:22px;font-size:12px;line-height:18px;transform:translate(-50%,-50%) rotate(var(--pr,0deg)) scale(var(--is,1))}
+.vbar{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));
+  background:linear-gradient(rgba(16,21,28,.85),rgba(16,21,28,0));pointer-events:none}
+.vbar>*{pointer-events:auto}
+.vbar .vtools{display:flex;gap:6px}
+.vbar button{font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.35);background:rgba(16,21,28,.6);color:#fff;cursor:pointer}
+.vbar .vclose{font-size:15px;background:#fff;color:#10151c;border-color:#fff}
+.vbar button:focus-visible{outline:3px solid #f5b800;outline-offset:2px}
+.vhint{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);
+  background:rgba(16,21,28,.8);color:#fff;font-size:13px;font-weight:700;padding:8px 14px;border-radius:999px;pointer-events:none;text-align:center}
+.vinfo{position:absolute;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  margin:0 auto;max-width:420px;background:var(--card);color:var(--ink);border-radius:14px;padding:12px 14px;display:grid;gap:0;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+.vinfo .nm{font-family:var(--display);font-size:18px;color:var(--ai)}
+.vinfo .ev{font-weight:700}
+.vinfo .wh{font-size:13px;color:var(--muted)}
+.vinfo .st{font-size:12px;font-weight:700;color:var(--shu)}
 @media (prefers-reduced-motion:reduce){.live{animation:none}}
 @media (prefers-reduced-motion:reduce){.slot.new .stamp{animation:none}.bar span{transition:none}}
 </style>
@@ -198,13 +223,11 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   <section class="pane" id="pane-map" role="tabpanel" aria-labelledby="tab-map" hidden>
     <div class="maptools">
       <div class="legend"><span><i class="l-got"></i>押した</span><span><i class="l-not"></i>まだ</span></div>
-      <div class="zoom" role="group" aria-label="地図の大きさ">
-        <button type="button" data-z="1" aria-pressed="true">全体</button>
-        <button type="button" data-z="2" aria-pressed="false">拡大</button>
-      </div>
+      <button type="button" class="fsbtn" id="fsopen">全画面で見る</button>
     </div>
     <div class="mapscroll" id="mapscroll">
       <div class="mapbox" id="mapbox"><img src="map.png" alt="会場マップ。2号館3・4階の教室、中庭のテント、1号館の入場ゲートの配置" width="2339" height="1654"></div>
+      <button type="button" class="mapcorner" id="fsopen2" aria-label="地図を全画面で見る">タップで拡大</button>
     </div>
     <div class="info" id="info"><span class="wh">地図の丸をタップすると、出し物と場所が出ます。</span></div>
     <div class="todo">
@@ -238,6 +261,22 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
       <button type="submit" class="ok" id="okbtn">押す</button>
     </div>
   </form>
+</div>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="会場マップ（全画面）">
+  <div class="vstage" id="vstage">
+    <div class="vmove" id="vmove"><div class="vrot" id="vrot">
+      <div class="mapbox" id="vmap"><img src="map.png" alt="会場マップ" width="2339" height="1654" draggable="false"></div>
+    </div></div>
+  </div>
+  <div class="vbar">
+    <div class="vtools">
+      <button type="button" id="vrotate">向きを変える</button>
+      <button type="button" id="vfit">全体</button>
+    </div>
+    <button type="button" class="vclose" id="vclose">閉じる ✕</button>
+  </div>
+  <div class="vhint" id="vhint">2本指で拡大・ドラッグで移動</div>
+  <div class="vinfo" id="vinfo" hidden></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 
@@ -300,7 +339,8 @@ function render(newId){
 }
 let selId=null;
 function renderMap(){
-  const box=$("mapbox");box.querySelectorAll(".pin").forEach(p=>p.remove());
+  ["mapbox","vmap"].forEach(bid=>{
+  const box=$(bid);box.querySelectorAll(".pin").forEach(p=>p.remove());
   SPOTS.forEach(s=>{
     const f=INFO[s.name];if(!f)return;
     const got=stamps[s.id];
@@ -311,6 +351,7 @@ function renderMap(){
     p.setAttribute("aria-label",`${s.name} ${f.ev}（${got?"押した":"まだ"}）`);
     p.onclick=()=>select(s);
     box.appendChild(p);
+  });
   });
   const rest=SPOTS.filter(s=>!stamps[s.id]);
   $("chips").innerHTML=rest.length?"":'<span class="done">全部まわりました！</span>';
@@ -325,6 +366,8 @@ function select(s,scroll){
   selId=s.id;const f=INFO[s.name]||{};const got=stamps[s.id];
   $("info").innerHTML=`<span class="nm">${s.name}</span><span class="ev">${f.ev||""}</span><span class="wh">${f.at||""}</span><span class="st">${got?"スタンプ済み "+fmt(got):"まだ押していません"}</span>`;
   renderMap();
+  const vi=$("vinfo");vi.innerHTML=$("info").innerHTML;vi.hidden=false;$("vhint").hidden=true;
+  if(!$("viewer").hidden)return;
   const sc=$("mapscroll");
   if(f.x!=null){const img=$("mapbox");sc.scrollTo({left:img.offsetWidth*f.x/100-sc.clientWidth/2,top:img.offsetHeight*f.y/100-sc.clientHeight/2,behavior:"smooth"})}
   if(scroll)sc.scrollIntoView({behavior:"smooth",block:"start"});
@@ -357,11 +400,86 @@ function renderShops(){
 document.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{
   shopCat=b.dataset.c;document.querySelectorAll(".filters button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderShops();
 });
-document.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll(".zoom button").forEach(x=>x.setAttribute("aria-pressed",x===b));
-  $("mapbox").style.width=(b.dataset.z==="2"?"250%":"100%");$("mapbox").classList.toggle("z2",b.dataset.z==="2");
-  if(selId){const s=SPOTS.find(x=>x.id===selId);select(s)}
+// ===== 全画面マップ（2本指で拡大・ドラッグで移動） =====
+const MAPW=2339,MAPH=1654;
+const V={s:1,tx:0,ty:0,rot:false,cw:0,ch:0,auto:true};
+const vTop=()=>$("viewer").querySelector(".vbar").offsetHeight-6;  // 上のボタンの下から表示
+function vLayout(keep){
+  const vw=innerWidth,vh=innerHeight-vTop();
+  if(V.auto)V.rot=vh>vw*1.05;
+  const a=MAPW/MAPH;let W,H;
+  if(V.rot){W=Math.min(vh,vw*a);H=W/a;V.cw=H;V.ch=W}else{W=Math.min(vw,vh*a);H=W/a;V.cw=W;V.ch=H}
+  const m=$("vmap");m.style.width=W+"px";m.style.height=H+"px";
+  m.style.transform=V.rot?`translate(${H}px,0) rotate(90deg)`:"none";
+  const r=$("vrot");r.style.width=V.cw+"px";r.style.height=V.ch+"px";
+  $("viewer").style.setProperty("--pr",V.rot?"-90deg":"0deg");
+  if(!keep){V.s=1;V.tx=(vw-V.cw)/2;V.ty=vTop()+(vh-V.ch)/2}
+  vApply();
+}
+function vClamp(){
+  const T=vTop(),vw=innerWidth,vh=innerHeight,w=V.cw*V.s,h=V.ch*V.s;
+  V.tx=w<=vw?(vw-w)/2:Math.min(0,Math.max(vw-w,V.tx));
+  V.ty=h<=vh-T?T+(vh-T-h)/2:Math.min(T,Math.max(vh-h,V.ty));
+}
+function vApply(){
+  vClamp();
+  $("vmove").style.transform=`translate(${V.tx}px,${V.ty}px) scale(${V.s})`;
+  $("viewer").style.setProperty("--is",String(1/V.s));
+}
+function vZoomAt(x,y,ns){
+  ns=Math.min(6,Math.max(1,ns));
+  const px=(x-V.tx)/V.s,py=(y-V.ty)/V.s;
+  V.s=ns;V.tx=x-px*ns;V.ty=y-py*ns;vApply();
+}
+function openViewer(){
+  const v=$("viewer");v.hidden=false;document.body.style.overflow="hidden";
+  V.auto=true;vLayout(false);
+  $("vhint").hidden=false;$("vinfo").hidden=true;
+  clearTimeout(openViewer.t);openViewer.t=setTimeout(()=>$("vhint").hidden=true,3500);
+  $("vclose").focus();
+}
+function closeViewer(){$("viewer").hidden=true;document.body.style.overflow="";ptrs.clear()}
+$("fsopen").onclick=openViewer;$("fsopen2").onclick=openViewer;
+$("mapbox").querySelector("img").addEventListener("click",openViewer);
+$("vclose").onclick=closeViewer;
+$("vfit").onclick=()=>vLayout(false);
+$("vrotate").onclick=()=>{V.auto=false;V.rot=!V.rot;vLayout(false)};
+addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("viewer").hidden)closeViewer()});
+addEventListener("resize",()=>{if(!$("viewer").hidden)vLayout(false)});
+const ptrs=new Map();let gest=null,lastTap=0;
+const stage=$("vstage");
+function gSnap(){
+  const p=[...ptrs.values()];
+  if(p.length>=2){return{n:2,x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1}}
+  if(p.length===1)return{n:1,x:p[0].x,y:p[0].y,d:1};
+  return null;
+}
+stage.addEventListener("pointerdown",e=>{
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});
+  gest=gSnap();
 });
+stage.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId))return;
+  const q=ptrs.get(e.pointerId);q.x=e.clientX;q.y=e.clientY;
+  const g=gSnap();if(!g||!gest||g.n!==gest.n){gest=g;return}
+  e.preventDefault();
+  V.tx+=g.x-gest.x;V.ty+=g.y-gest.y;
+  if(g.n===2)vZoomAt(g.x,g.y,V.s*g.d/gest.d);else vApply();
+  gest=g;
+},{passive:false});
+function ptrUp(e){
+  const q=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);gest=gSnap();
+  if(!q||e.type!=="pointerup"||ptrs.size)return;
+  const moved=Math.hypot(e.clientX-q.sx,e.clientY-q.sy)>10;
+  if(moved||e.target.closest(".pin"))return;
+  const now=Date.now();
+  if(now-lastTap<320){lastTap=0;if(V.s>1.2)vLayout(false);else vZoomAt(e.clientX,e.clientY,2.5)}
+  else lastTap=now;
+}
+stage.addEventListener("pointerup",ptrUp);stage.addEventListener("pointercancel",ptrUp);
+stage.addEventListener("wheel",e=>{e.preventDefault();vZoomAt(e.clientX,e.clientY,V.s*Math.exp(-e.deltaY*0.002))},{passive:false});
+// iOS Safari のページ拡大（ジェスチャー）を止める
+["gesturestart","gesturechange"].forEach(t=>stage.addEventListener(t,e=>e.preventDefault()));
 function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200)}
 
 let current=null,fails=0,lockUntil=0;
