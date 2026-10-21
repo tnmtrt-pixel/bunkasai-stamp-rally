@@ -8,7 +8,7 @@
 <style>
 [hidden]{display:none!important}
 *{box-sizing:border-box}
-/* Layout: 台紙とマップの2タブ。上に進捗、16個のスタンプ枠（4列）、枠をタップすると係用の押印パネル */
+/* Layout: 台紙・マップ・出し物の3タブ。上に進捗、9個のスタンプ枠（3列）、枠をタップすると係用の押印パネル */
 :root{
   --paper:#eef2f4; --card:#fbfcfc; --ink:#1d2a3a; --muted:#5e6c7b;
   --line:#c9d3db; --shu:#d8432e; --ai:#26457a; --veil:rgba(20,30,45,.55);
@@ -32,10 +32,10 @@ h1{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.2;mar
 .bar{flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
 .bar span{display:block;height:100%;background:var(--shu);transition:width .5s}
 .count{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--shu)}
-.sheet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px 12px}
 .slot{display:grid;justify-items:center;align-content:start;gap:4px;text-align:center;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;min-width:0}
 .slot:focus-visible .circle{outline:3px solid var(--ai);outline-offset:3px}
-.circle{width:100%;max-width:84px;aspect-ratio:1;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;position:relative}
+.circle{width:100%;max-width:92px;aspect-ratio:1;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;position:relative}
 .circle .no{font-family:var(--display);font-size:clamp(12px,3.6vw,18px);color:var(--muted);opacity:.7;padding:0 4px;line-height:1.15;word-break:keep-all}
 .slot.got .circle{border-color:transparent}
 .stamp{position:absolute;inset:3px;border-radius:50%;border:3px double var(--shu);color:var(--shu);display:grid;place-items:center;
@@ -149,7 +149,7 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   <header>
     <div class="eyebrow">STAMP RALLY</div>
     <h1>文化祭スタンプラリー</h1>
-    <p class="lead">全16か所。すべて集めたら受付でこの画面を見せてください。</p>
+    <p class="lead">教室内の全<span id="lead-n">9</span>か所。すべて集めたら受付でこの画面を見せてください。</p>
   </header>
 
   <div class="tabs" role="tablist">
@@ -160,7 +160,7 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 
   <div class="progress" id="progress" aria-live="polite">
     <div class="bar"><span id="bar"></span></div>
-    <div class="count"><span id="got">0</span>/<span id="total">16</span></div>
+    <div class="count"><span id="got">0</span>/<span id="total">9</span></div>
   </div>
 
   <div class="goal" id="goal" hidden>
@@ -287,7 +287,7 @@ function render(newId){
     b.onclick=()=>openStaff(s);
     sheet.appendChild(b);
   });
-  const n=Object.keys(stamps).length;
+  const n=SPOTS.filter(s=>stamps[s.id]).length;$("lead-n").textContent=SPOTS.length;
   $("got").textContent=n;$("total").textContent=SPOTS.length;
   $("bar").style.width=(n/SPOTS.length*100)+"%";
   renderMap();renderShops();
@@ -296,7 +296,7 @@ function render(newId){
   $("goal").classList.toggle("done",!!prize);
   $("goal-open").hidden=!!prize;$("goal-done").hidden=!prize;
   if(prize){const d=new Date(prize);$("ptime").textContent=`${d.getMonth()+1}/${d.getDate()} ${fmt(prize)}`}
-  else if(full){const last=Math.max(...Object.values(stamps));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
+  else if(full){const last=Math.max(...SPOTS.map(s=>stamps[s.id]||0));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
 }
 let selId=null;
 function renderMap(){
