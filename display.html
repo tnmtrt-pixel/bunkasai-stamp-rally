@@ -4,16 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>スタンプラリー QR表示</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 /* Layout: 教室に置く画面。中央に大きなQR、上に教室名、下に残り時間のバー */
 :root{
   --paper:#eef2f4; --card:#ffffff; --ink:#1d2a3a; --muted:#5e6c7b;
   --line:#c9d3db; --shu:#d8432e; --ai:#26457a;
-  --display:"Dela Gothic One","Hiragino Sans",sans-serif;
-  --body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  --display:"Dela Gothic One","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  --body:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Meiryo",sans-serif;
 }
 html,body{height:100%;margin:0}
 body{background:var(--paper);color:var(--ink);font-family:var(--body);
@@ -109,6 +111,19 @@ async function keepAwake(){
   try{wake=await navigator.wakeLock.request("screen")}catch(e){}
 }
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&spot)keepAwake()});
+
+// 見出し用フォント（Dela Gothic One）は、このページで使う文字だけを1ファイルで読み込む。
+// 日本語フォントの小分け読み込みで、文字ごとにフォントが混ざって崩れるのを防ぐ。
+function loadDisplayFont(extra){
+  try{
+    let t=[...document.querySelectorAll(".setup h1,.room")].map(e=>e.textContent).join("")+(extra||"")+"0123456789:/〜～-月日年達成受取済！";
+    t=[...new Set(t.replace(/\s/g,""))].join("");
+    const l=document.createElement("link");l.rel="stylesheet";
+    l.href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=block&text="+encodeURIComponent(t);
+    document.head.appendChild(l);
+  }catch(e){}
+}
+loadDisplayFont(RALLY.spots.map(x=>x.name).join("")+"QR表示の準備");
 </script>
 </body>
 </html>
