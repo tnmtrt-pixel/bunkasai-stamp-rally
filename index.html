@@ -13,7 +13,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Layout: デジタルパンフレット。下に4つのナビ（ホーム／出し物／マップ／スタンプ）。ホームは表紙＋目次＋お知らせ、スタンプラリーはその中の1ページ */
 :root{
   --paper:#eef2f4; --card:#fbfcfc; --ink:#1d2a3a; --muted:#5e6c7b;
-  --line:#c9d3db; --shu:#d8432e; --ai:#26457a; --ai-deep:#1a3360; --veil:rgba(20,30,45,.55);
+  --line:#c9d3db; --shu:#d8432e; --ai:#1f4aa8; --ai-deep:#163a8a; --veil:rgba(20,30,45,.55);
   --display:"Dela Gothic One","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
   --body:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Meiryo",sans-serif;
   --navh:64px;
@@ -49,6 +49,10 @@ h2.sec small{font-family:var(--body);font-size:12px;font-weight:700;letter-spaci
   background-image:radial-gradient(circle at 1px 1px,#fff 1.4px,transparent 1.6px);background-size:18px 18px}
 .cover::after{content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;border:26px solid rgba(216,67,46,.9)}
 .cover-in{position:relative;z-index:1;max-width:560px;margin:0 auto;display:grid;gap:10px}
+.cover.has-img{padding:env(safe-area-inset-top,0px) 0 0;background:var(--ai-deep)}
+.cover.has-img::before,.cover.has-img::after{display:none}
+.cover-img{display:block;width:100%;max-width:560px;height:auto;margin:0 auto}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .cover .kicker{font-size:12px;font-weight:700;letter-spacing:.2em;opacity:.85}
 .cover h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,14vw,72px);line-height:1.05;margin:4px 0 0;text-wrap:balance;letter-spacing:.02em}
 .cover .sub{font-family:var(--display);font-size:15px;letter-spacing:.12em;opacity:.9}
@@ -490,6 +494,13 @@ function renderFest(){
   $("c-kicker").textContent=[FEST.school,FEST.year].filter(Boolean).join("　")||"DIGITAL PAMPHLET";
   $("c-sub").textContent="DIGITAL PAMPHLET";
   if(FEST.theme){$("c-theme").hidden=false;$("c-theme").textContent=FEST.theme}
+  if(FEST.cover){
+    // 表紙画像があるときは画像を表紙にし、文字は読み上げ用に残す
+    const cv=document.querySelector(".cover");cv.classList.add("has-img");
+    const im=document.createElement("img");im.className="cover-img";im.src=FEST.cover;im.alt=FEST.coverAlt||`${name} 表紙`;
+    im.width=977;im.height=1385;im.decoding="async";
+    cv.insertBefore(im,cv.firstChild);cv.querySelector(".cover-in").classList.add("sr");
+  }
   const ds=FEST.dates||[];
   $("c-when").innerHTML=ds.length?ds.map(d=>`<div class="d"><b>${esc(d.day)}</b><span>${esc(d.time||"")}</span></div>`).join(""):'<div class="tbd">開催日時は準備中です</div>';
   const g=FEST.greeting||{};
