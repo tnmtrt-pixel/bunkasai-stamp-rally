@@ -326,7 +326,7 @@ html.intro body{overflow:hidden}
       <div class="mk">STAMP<br>RALLY</div>
       <div class="tx">
         <b>スタンプラリー開催中</b>
-        <span>教室の<span class="rally-n">9</span>か所を回ってスタンプを集めると、景品がもらえます</span>
+        <span>教室の<span class="rally-n">9</span>か所を回ってスタンプを集めると、文化祭本部（2号館3階 2305）で景品がもらえます</span>
         <div class="mini"><div class="bar"><span id="hbar"></span></div><div class="count"><span id="hgot">0</span>/<span class="rally-n">9</span></div></div>
       </div>
     </button>
@@ -398,7 +398,7 @@ html.intro body{overflow:hidden}
   <section class="pane" id="pane-stamp" aria-label="スタンプラリー" hidden>
     <div>
       <h2 class="sec">スタンプラリー<small>STAMP RALLY</small></h2>
-      <p class="lead">教室内の全<span class="rally-n">9</span>か所。すべて集めたら受付でこの画面を見せてください。</p>
+      <p class="lead">教室内の全<span class="rally-n">9</span>か所。すべて集めたら、2号館3階 2305の<b>文化祭本部</b>でこの画面を見せて、景品を受け取ってください。</p>
     </div>
     <div class="warnbox" id="inapp" hidden>
       <strong>Safari（またはChrome）で開き直してください</strong>
@@ -411,11 +411,11 @@ html.intro body{overflow:hidden}
     <div class="goal" id="goal" hidden>
       <div id="goal-open" class="pane" style="gap:6px">
         <h2>コンプリート！</h2>
-        <div>受付でこの画面を見せて、景品を受け取ってください</div>
+        <div>2号館3階 2305の文化祭本部でこの画面を見せて、景品を受け取ってください</div>
         <div class="time" id="ctime"></div>
         <div class="live" aria-hidden="true"></div>
         <div class="now" id="now"></div>
-        <button type="button" class="give" id="give">受付の人が押す：景品を渡す</button>
+        <button type="button" class="give" id="give">本部の人が押す：景品を渡す</button>
       </div>
       <div id="goal-done" class="pane" style="gap:6px" hidden>
         <h2>景品は受け取り済みです</h2>
@@ -606,7 +606,7 @@ function render(newId){
 }
 
 // ===== 出し物 =====
-const CAT={food:"食べ物",play:"遊び",show:"展示・ステージ"};
+const CAT={food:"食べ物",play:"遊び",show:"展示・ステージ",info:"案内"};
 let shopCat="all",shopArea="all";
 const AREAS=[...new Set(SHOPS.map(areaOf))];
 $("f-area").innerHTML='<span class="lb">場所</span><button type="button" data-a="all" aria-pressed="true">すべて</button>'+AREAS.map(a=>`<button type="button" data-a="${esc(a)}" aria-pressed="false">${esc(a)}</button>`).join("");
@@ -759,13 +759,13 @@ stage.addEventListener("wheel",e=>{e.preventDefault();vZoomAt(e.clientX,e.client
 ["gesturestart","gesturechange"].forEach(t=>stage.addEventListener(t,e=>e.preventDefault()));
 function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200)}
 
-// ===== 係・受付の番号入力 =====
+// ===== 係・本部の番号入力 =====
 let current=null,fails=0,lockUntil=0;
 function openStaff(s){
   if(s.id!=="desk"&&stamps[s.id]){toast(`${s.name} はもう押してあります`);return}
   const desk=s.id==="desk";
-  $("stag").textContent=desk?"受付の人が入力してください":"係の人が入力してください";
-  $("sdesc").textContent=desk?"受付用番号（4桁）を入力すると、景品を受け取り済みにします。":"この教室の係用番号（4桁）を入力してください。";
+  $("stag").textContent=desk?"本部の人が入力してください":"係の人が入力してください";
+  $("sdesc").textContent=desk?"本部用番号（4桁）を入力すると、景品を受け取り済みにします。":"この教室の係用番号（4桁）を入力してください。";
   $("okbtn").textContent=desk?"受取済みにする":"押す";
   $("smap").hidden=desk;
   current=s;$("sname").textContent=desk?"景品の受け取り":s.name;
