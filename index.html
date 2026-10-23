@@ -6,6 +6,10 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script>
+// 初めて開いたときだけチケットを切る演出を出す（教室のQRから開いたときは出さない）
+try{if(!/[?&]s=/.test(location.search)&&!localStorage.getItem("koukasai-ticket-torn"))document.documentElement.classList.add("intro")}catch(e){}
+</script>
 <style>
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 [hidden]{display:none!important}
@@ -268,6 +272,38 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .scanner video{width:100%;height:100%;object-fit:cover}
 .scanner .frame{position:absolute;width:min(70vw,60vh,320px);aspect-ratio:1;border:4px solid #fff;border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
 .scanner .smsg{font-size:14px;font-weight:700;text-align:center;min-height:1.5em}
+/* チケットを切る演出 */
+#intro{display:none;position:fixed;inset:0;z-index:60;background:#0c2766;color:#fff;overflow:hidden;
+  padding:calc(56px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
+  transition:background-color .5s ease}
+html.intro #intro{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+html.intro body{overflow:hidden}
+#intro.clear{background-color:rgba(12,39,102,0)}
+.tk{position:relative;width:min(100%,calc((100vh - 170px) * 977 / 1609),460px);flex:none;filter:drop-shadow(0 10px 24px rgba(0,0,0,.45))}
+@supports (height:100dvh){.tk{width:min(100%,calc((100dvh - 170px) * 977 / 1609),460px)}}
+.tk-top{display:block;width:100%;height:auto;max-width:none;transform-origin:0 0}
+.tk-stub{position:relative;display:block;width:100%;transform-origin:100% 0;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.tk-stub::before{content:"";position:absolute;left:0;right:0;top:-48px;height:48px}
+.tk-stub img{display:block;width:100%;height:auto;max-width:none;pointer-events:none;-webkit-user-drag:none}
+.perf{position:absolute;left:0;right:0;top:-1px;border-top:3px dashed rgba(255,255,255,.95);pointer-events:none}
+.tear{position:absolute;left:0;top:-3px;height:6px;width:0;border-radius:3px;background:#fff;box-shadow:0 0 10px 3px rgba(255,214,102,.9);pointer-events:none}
+.finger{position:absolute;top:-17px;left:4%;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 0 0 6px rgba(255,255,255,.3);pointer-events:none;animation:fingerdemo 1.8s ease-in-out infinite}
+@keyframes fingerdemo{0%{left:4%;opacity:0}15%{opacity:1}75%{left:80%;opacity:1}100%{left:86%;opacity:0}}
+.tk.touched .finger{display:none}
+.tk-hint{font-size:15px;font-weight:700;text-align:center;line-height:1.5;display:flex;align-items:center;gap:8px}
+.tk-hint .ar{display:inline-block;animation:arr 1s ease-in-out infinite}
+@keyframes arr{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+.tk-skip{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));font:inherit;font-weight:700;font-size:14px;
+  padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
+.tk-skip:focus-visible{outline:3px solid #ffd666;outline-offset:2px}
+.tk-stub.back{transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.tk-stub.back .tear{transition:width .35s ease}
+.tk-stub.fall{transition:transform .9s cubic-bezier(.45,0,.85,.55),opacity .9s ease;opacity:.0}
+.tk-top.fly{transition:transform .65s cubic-bezier(.3,.8,.3,1)}
+#intro .fade{transition:opacity .3s ease}
+#intro.clear .fade{opacity:0}
+.replay{font:inherit;font-size:12px;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;justify-self:center}
+@media (prefers-reduced-motion:reduce){.finger,.tk-hint .ar{animation:none}.tk-stub.fall,.tk-top.fly{transition:none}}
 @media (prefers-reduced-motion:reduce){.live{animation:none}.slot.new .stamp{animation:none}.bar span{transition:none}}
 </style>
 
@@ -321,6 +357,7 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
       <h2 class="sec">ご来場の方へ</h2>
       <dl class="notice" id="noticelist"></dl>
     </div>
+    <button type="button" class="replay" id="replay" hidden>入場チケットをもう一度切る</button>
   </section>
 
   <!-- 出し物 -->
@@ -445,6 +482,17 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
   <div class="shead"><strong>教室のQRコードを枠に入れてください</strong><button type="button" id="scanclose">やめる</button></div>
   <div class="sview"><video id="video" playsinline muted></video><div class="frame" aria-hidden="true"></div></div>
   <div class="smsg" id="smsg" role="status">カメラを準備しています…</div>
+</div>
+<div id="intro" role="dialog" aria-modal="true" aria-label="入場チケット">
+  <button type="button" class="tk-skip fade" id="tkskip">スキップ</button>
+  <div class="tk" id="tk">
+    <img class="tk-top" id="tktop" src="cover.jpg" alt="紅華祭の入場チケット" width="977" height="1385">
+    <div class="tk-stub" id="tkstub" aria-label="入場チケットの切り取り部分。右へスワイプして切り取ります">
+      <img src="stub.jpg" alt="入場チケット" width="977" height="224" draggable="false">
+      <div class="perf"></div><div class="tear" id="tktear"></div><div class="finger"></div>
+    </div>
+  </div>
+  <div class="tk-hint fade" id="tkhint">点線を左から右へなぞってチケットを切る<span class="ar" aria-hidden="true">→</span></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 
@@ -759,6 +807,67 @@ setInterval(()=>{const d=new Date();$("now").textContent=`いまの時刻 ${d.ge
 
 renderFest();
 render();
+
+// ===== 入場チケットを切る演出 =====
+const TKKEY="koukasai-ticket-torn";
+const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let tkP=0,tkStart=null,tkDone=false;
+function tkSet(p){
+  tkP=Math.max(0,Math.min(1,p));
+  $("tktear").style.width=(tkP*100)+"%";
+  $("tkstub").style.transform=`rotate(${-tkP*4}deg) translateY(${tkP*5}px)`;
+}
+function tkOpen(){
+  if(!FEST.ticket){document.documentElement.classList.remove("intro");return}
+  tkDone=false;tkStart=null;
+  const st=$("tkstub");st.className="tk-stub";st.style.cssText="";
+  const top=$("tktop");top.className="tk-top";top.style.cssText="";
+  st.querySelector("img").src=FEST.ticket;top.src=FEST.cover||"cover.jpg";
+  $("tk").classList.remove("touched");$("intro").classList.remove("clear");$("intro").style.background="";
+  tkSet(0);document.documentElement.classList.add("intro");
+}
+function tkClose(){
+  document.documentElement.classList.remove("intro");
+  try{localStorage.setItem(TKKEY,"1")}catch(e){}
+  $("replay").hidden=!FEST.ticket;
+}
+function tkFinish(){
+  if(tkDone)return;tkDone=true;tkSet(1);
+  try{localStorage.setItem(TKKEY,"1")}catch(e){}
+  if(navigator.vibrate)try{navigator.vibrate(20)}catch(e){}
+  window.scrollTo(0,0);showTab("home");
+  if(reduceMotion){tkClose();return}
+  const st=$("tkstub");st.classList.add("fall");
+  st.style.transform=`translate(-8vw,${innerHeight}px) rotate(-28deg)`;
+  // 残ったチケットの上半分を、ホームの表紙の位置へ移す
+  setTimeout(()=>{
+    const top=$("tktop"),a=top.getBoundingClientRect(),cv=document.querySelector(".cover-img");
+    $("intro").classList.add("clear");
+    if(cv){const b=cv.getBoundingClientRect();top.classList.add("fly");
+      top.style.transform=`translate(${b.left-a.left}px,${b.top-a.top}px) scale(${b.width/a.width})`;}
+    $("tk").style.filter="none";
+    setTimeout(tkClose,700);
+  },450);
+}
+(()=>{
+  const st=$("tkstub");
+  st.addEventListener("pointerdown",e=>{
+    if(tkDone)return;tkStart={x:e.clientX,p:tkP};st.classList.remove("back");$("tk").classList.add("touched");
+    try{st.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  st.addEventListener("pointermove",e=>{
+    if(!tkStart||tkDone)return;
+    const w=$("tk").getBoundingClientRect().width*0.75;
+    tkSet(tkStart.p+(e.clientX-tkStart.x)/w);
+    if(tkP>=1)tkFinish();
+  });
+  const up=()=>{if(!tkStart||tkDone)return;tkStart=null;if(tkP>=0.95){tkFinish();return}st.classList.add("back");tkSet(0)};
+  st.addEventListener("pointerup",up);st.addEventListener("pointercancel",up);
+  $("tkskip").onclick=()=>{tkDone=true;tkClose()};
+  $("replay").onclick=()=>{window.scrollTo(0,0);tkOpen()};
+  addEventListener("keydown",e=>{if(e.key==="Escape"&&document.documentElement.classList.contains("intro"))$("tkskip").click()});
+  if(document.documentElement.classList.contains("intro"))tkOpen();else $("replay").hidden=!FEST.ticket;
+})();
 loadDisplayFont(SPOTS.map(x=>x.name).join("")+SHOPS.map(x=>x.by).join("")+"コンプリート！景品は受け取り済みです受取済QRを読み取る景品の受け取りSTAMPRALLY");
 
 // ほかのタブで押したスタンプを反映
