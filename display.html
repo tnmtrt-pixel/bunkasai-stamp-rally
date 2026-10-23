@@ -39,6 +39,11 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .foot{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted)}
 .foot button{font-size:12px;padding:6px 10px;background:none;color:var(--muted);border:1px solid var(--line)}
 .url{font-size:11px;color:var(--muted);word-break:break-all;max-width:556px}
+.qrwrap{position:relative;display:grid;justify-items:center;gap:16px}
+.qcover{position:absolute;inset:-6px;background:var(--card);border:4px dashed var(--line);border-radius:18px;display:grid;place-content:center;justify-items:center;gap:14px;padding:20px}
+.qcover p{margin:0;font-size:clamp(15px,2.6vw,22px);font-weight:700;color:var(--ink)}
+.qcover button{font-size:clamp(18px,3.2vw,28px);padding:16px 28px;background:var(--shu)}
+.rmsg{font-size:clamp(14px,2.4vw,20px);font-weight:700;color:var(--shu);min-height:1.4em}
 .warn{background:var(--shu);color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:700}
 </style>
 </head>
@@ -54,17 +59,21 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   </form>
 
   <div class="show" id="show" hidden>
-    <div class="sub">スマホのカメラで読み取ってスタンプGET</div>
+    <div class="sub">出し物を体験した人は、QRを読み取ってスタンプGET</div>
     <div class="room" id="rname"></div>
-    <div class="qrbox"><div id="qr"></div></div>
-    <div class="timer"><span id="bar"></span></div>
+    <div class="qrwrap">
+      <div class="qrbox"><div id="qr"></div></div>
+      <div class="timer"><span id="bar"></span></div>
+      <div class="qcover" id="qcover"><p>体験が終わった人に、係の人が表示します</p><button type="button" id="reveal">QRを表示する</button></div>
+    </div>
+    <div class="rmsg" id="rmsg" aria-live="polite"></div>
     <div class="warn" id="warn" hidden></div>
     <div class="foot">
       <span>QRは<span id="step"></span>秒ごとに切り替わります</span>
       <button type="button" id="full">全画面</button>
       <button type="button" id="back">教室を変える</button>
     </div>
-    <div class="url" id="url"></div>
+    <div class="url" id="url" hidden></div>
   </div>
 </div>
 
@@ -76,7 +85,9 @@ const base=new URL("index.html",location.href).href;
 RALLY.spots.forEach(s=>{const o=document.createElement("option");o.value=s.id;o.textContent=s.name;$("room").appendChild(o)});
 try{const r=localStorage.getItem("rally-display-room");if(r)$("room").value=r}catch(e){}
 $("step").textContent=RALLY.step;
-let spot=null,lastW=null,wake=null,qr=null;
+let spot=null,lastW=null,wake=null,qr=null,hideAt=0;
+const SHOW=RALLY.reveal||20;  // QRを表示しておく秒数
+$("reveal").onclick=()=>{hideAt=Date.now()+SHOW*1000};
 
 $("setup").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -89,7 +100,7 @@ $("setup").addEventListener("submit",async e=>{
   if(!/^https:/.test(base)){$("warn").hidden=false;$("warn").textContent="このページは https で公開した場所から開いてください（今のままではスマホで読み取れません）"}
   lastW=null;tick();keepAwake();
 });
-$("back").onclick=()=>{spot=null;$("show").hidden=true;$("setup").hidden=false};
+$("back").onclick=()=>{spot=null;hideAt=0;$("show").hidden=true;$("setup").hidden=false};
 $("full").onclick=()=>{const d=document.documentElement;(d.requestFullscreen?d.requestFullscreen():Promise.reject()).catch(()=>{})};
 
 async function tick(){
@@ -103,6 +114,8 @@ async function tick(){
     qr=new QRCode($("qr"),{text:url,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
     $("url").textContent=url;
   }
+  const open=now<hideAt;$("qcover").hidden=open;
+  $("rmsg").textContent=open?`あと${Math.ceil((hideAt-now)/1000)}秒で隠れます`:"";
   const left=1-((now/1000)%RALLY.step)/RALLY.step;
   $("bar").style.width=(left*100)+"%";
   setTimeout(tick,250);

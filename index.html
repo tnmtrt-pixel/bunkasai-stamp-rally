@@ -326,8 +326,8 @@ html.intro body{overflow:hidden}
       <div class="mk">STAMP<br>RALLY</div>
       <div class="tx">
         <b>スタンプラリー開催中</b>
-        <span>教室の<span class="rally-n">9</span>か所を回ってスタンプを集めると、文化祭本部（2号館3階 2305）で景品がもらえます</span>
-        <div class="mini"><div class="bar"><span id="hbar"></span></div><div class="count"><span id="hgot">0</span>/<span class="rally-n">9</span></div></div>
+        <span>教室の出し物を体験してスタンプを集めよう。<span class="rally-n">9</span>か所のうち<span class="rally-goal">5</span>か所で、文化祭本部（2号館3階 2305）で景品と交換できます</span>
+        <div class="mini"><div class="bar"><span id="hbar"></span></div><div class="count"><span id="hgot">0</span>/<span id="hden">5</span></div></div>
       </div>
     </button>
 
@@ -398,7 +398,7 @@ html.intro body{overflow:hidden}
   <section class="pane" id="pane-stamp" aria-label="スタンプラリー" hidden>
     <div>
       <h2 class="sec">スタンプラリー<small>STAMP RALLY</small></h2>
-      <p class="lead">教室内の全<span class="rally-n">9</span>か所。すべて集めたら、2号館3階 2305の<b>文化祭本部</b>でこの画面を見せて、景品を受け取ってください。</p>
+      <p class="lead">教室内の<span class="rally-n">9</span>か所のうち、<b><span class="rally-goal">5</span>か所</b>のスタンプを集めると、2号館3階 2305の<b>文化祭本部</b>で景品と交換できます。スタンプは、その教室の出し物を体験するともらえます。</p>
     </div>
     <div class="warnbox" id="inapp" hidden>
       <strong>Safari（またはChrome）で開き直してください</strong>
@@ -406,11 +406,12 @@ html.intro body{overflow:hidden}
     </div>
     <div class="progress" aria-live="polite">
       <div class="bar"><span id="bar"></span></div>
-      <div class="count"><span id="got">0</span>/<span class="rally-n" id="total">9</span></div>
+      <div class="count"><span id="got">0</span>/<span id="total">5</span></div>
     </div>
+    <p class="lead" id="left" aria-live="polite"></p>
     <div class="goal" id="goal" hidden>
       <div id="goal-open" class="pane" style="gap:6px">
-        <h2>コンプリート！</h2>
+        <h2>景品と交換できます！</h2>
         <div>2号館3階 2305の文化祭本部でこの画面を見せて、景品を受け取ってください</div>
         <div class="time" id="ctime"></div>
         <div class="live" aria-hidden="true"></div>
@@ -428,8 +429,9 @@ html.intro body{overflow:hidden}
     <div class="howto">
       <strong>スタンプのもらい方</strong>
       <ol>
-        <li>上の「QRを読み取る」を押す（はじめにカメラの許可を聞かれたら「許可」）</li>
-        <li>教室に置いてある画面のQRコードを枠に入れると、スタンプが押されます</li>
+        <li>教室の出し物を体験する</li>
+        <li>体験が終わったら、係の人が教室の画面にQRコードを出してくれます</li>
+        <li>上の「QRを読み取る」を押して、QRコードを枠に入れるとスタンプが押されます（はじめにカメラの許可を聞かれたら「許可」）</li>
       </ol>
       <span style="color:var(--muted)">QRが読めないときは、教室の枠をタップしてスマホを係の人に渡してください。</span>
       <span style="color:var(--muted)">プライベートブラウズやLINEの中ではスタンプが消えることがあります。いつものSafariやChromeで、このページを開いたまま回ってください。</span>
@@ -591,18 +593,21 @@ function render(newId){
     b.onclick=()=>openStaff(s);
     sheet.appendChild(b);
   });
-  const n=SPOTS.filter(s=>stamps[s.id]).length,N=SPOTS.length;
-  $$(".rally-n").forEach(e=>e.textContent=N);
+  const n=SPOTS.filter(s=>stamps[s.id]).length,N=SPOTS.length,G=Math.min(N,FEST.rallyGoal||N);
+  $$(".rally-n").forEach(e=>e.textContent=N);$$(".rally-goal").forEach(e=>e.textContent=G);
+  $("left").textContent=n>=N?"全部の教室をまわりました！":n>=G?`景品と交換できます！ 残り${N-n}か所もまわってみよう`:`あと${G-n}か所で景品と交換できます`;
   $("got").textContent=n;$("hgot").textContent=n;
-  $("bar").style.width=$("hbar").style.width=(n/N*100)+"%";
+  // 景品の数までは「n/5」、達成後は「n/9」で表示
+  const den=n>=G?N:G;$("total").textContent=$("hden").textContent=den;
+  $("bar").style.width=$("hbar").style.width=(n/den*100)+"%";
   const dot=$("navdot");dot.hidden=!n||!!prize;dot.textContent=n;
   renderMap();renderShops();
-  const full=n===N;
+  const full=n>=G;
   $("goal").hidden=!(full||prize);
   $("goal").classList.toggle("done",!!prize);
   $("goal-open").hidden=!!prize;$("goal-done").hidden=!prize;
   if(prize){const d=new Date(prize);$("ptime").textContent=`${d.getMonth()+1}/${d.getDate()} ${fmt(prize)}`}
-  else if(full){const last=Math.max(...SPOTS.map(s=>stamps[s.id]||0));const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
+  else if(full){const last=SPOTS.map(s=>stamps[s.id]).filter(Boolean).sort((a,b)=>a-b)[G-1];const d=new Date(last);$("ctime").textContent=`${d.getMonth()+1}月${d.getDate()}日 ${fmt(last)} 達成`}
 }
 
 // ===== 出し物 =====
@@ -868,7 +873,7 @@ function tkFinish(){
   addEventListener("keydown",e=>{if(e.key==="Escape"&&document.documentElement.classList.contains("intro"))$("tkskip").click()});
   if(document.documentElement.classList.contains("intro"))tkOpen();else $("replay").hidden=!FEST.ticket;
 })();
-loadDisplayFont(SPOTS.map(x=>x.name).join("")+SHOPS.map(x=>x.by).join("")+"コンプリート！景品は受け取り済みです受取済QRを読み取る景品の受け取りSTAMPRALLY");
+loadDisplayFont(SPOTS.map(x=>x.name).join("")+SHOPS.map(x=>x.by).join("")+"景品と交換できます！景品は受け取り済みです受取済QRを読み取る景品の受け取りSTAMPRALLY");
 
 // ほかのタブで押したスタンプを反映
 function syncStamps(){const cur=load();let ch=false;for(const k in cur)if(!stamps[k]){stamps[k]=cur[k];ch=true}if(ch)render()}
