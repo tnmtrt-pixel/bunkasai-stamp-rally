@@ -521,7 +521,7 @@ const $$=(sel,root=document)=>[...root.querySelectorAll(sel)];
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 // 言葉の途中で改行しないように、まとまりを <span class="nw"> で包む
 // 場所（2号館3階 2305 など）、短い「」、・で区切られた名前
-const phr=t=>esc(t).replace(/(\d号館\d階(?: \d{4}(?:〜\d+)?)?|中庭 テント[①-⑳・]+|「[^」]{1,14}」|北門 入場ゲート|メインアリーナ|文化祭本部(?:（生徒会）)?)/g,'<span class="nw">$1</span>');
+const phr=t=>esc(t).replace(/(\d号館\d階(?: \d{4}(?:〜\d+)?| 廊下)?|中庭 テント[①-⑳・]+|「[^」]{1,14}」|北門 入場ゲート|メインアリーナ|文化祭本部(?:（生徒会）)?)/g,'<span class="nw">$1</span>');
 const ttl=t=>String(t??"").split(/(?<=・)|(?=「)|\|/).filter(Boolean).map(p=>`<span class="nw">${esc(p)}</span>`).join("");
 const SPOTS=RALLY.spots;
 const SHOPS=window.SHOPS||[];
