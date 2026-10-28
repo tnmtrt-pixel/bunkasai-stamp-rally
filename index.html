@@ -230,6 +230,10 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .info .ev{font-weight:700}
 .info .wh{font-size:13px;color:var(--muted)}
 .info .st{font-size:12px;font-weight:700;color:var(--shu)}
+.info .gi{display:grid;gap:0;padding-top:8px;margin-top:6px;border-top:1px dashed var(--line)}
+.info .gi small{font-size:12px;font-weight:700;color:var(--muted);margin-left:4px}
+.vinfo .gi{display:grid;padding-top:4px}
+.vinfo .gi small{font-size:12px;color:var(--muted)}
 .info .lk{font:inherit;font-size:13px;font-weight:700;background:none;border:0;padding:0;color:var(--ai);text-decoration:underline;cursor:pointer;justify-self:start;margin-top:4px}
 .todo{display:grid;gap:8px}
 .todo h3{font-size:15px;margin:0}
@@ -645,19 +649,24 @@ $$("#f-area button").forEach(b=>b.onclick=()=>{shopArea=b.dataset.a;$$("#f-area 
 
 // ===== マップ =====
 let sel=null;
+// 地図の印：同じ場所（x,y が同じ）の出し物は1つの印にまとめる
+const posKey=x=>`${x.x},${x.y}`;
+const groupOf=x=>SHOPS.filter(y=>y.x!=null&&posKey(y)===posKey(x));
 function renderMap(){
   const only=$("stamponly").checked;
+  const groups=[];const seen=new Set();
+  SHOPS.forEach(x=>{if(x.x==null||seen.has(posKey(x)))return;seen.add(posKey(x));groups.push(groupOf(x))});
   ["mapbox","vmap"].forEach(bid=>{
     const box=$(bid);box.querySelectorAll(".pin").forEach(p=>p.remove());
-    SHOPS.forEach(x=>{
-      if(x.x==null)return;
+    groups.forEach(g=>{
+      const x=g.find(y=>spotOf(y))||g[0];
       const spot=spotOf(x);if(only&&!spot)return;
       const got=spot&&stamps[spot.id];
       const p=document.createElement("button");p.type="button";
-      p.className="pin"+(spot?" st":"")+(got?" got":"")+(sel===x?" sel":"");
+      p.className="pin"+(spot?" st":"")+(got?" got":"")+(sel===posKey(x)?" sel":"");
       p.style.left=x.x+"%";p.style.top=x.y+"%";
       p.textContent=got?"✓":"";
-      p.setAttribute("aria-label",`${x.by} ${x.title}${spot?`（スタンプ${got?"押した":"まだ"}）`:""}`);
+      p.setAttribute("aria-label",g.map(y=>`${y.by} ${y.title}`).join("、")+(spot?`（スタンプ${got?"押した":"まだ"}）`:""));
       p.onclick=()=>select(x);
       box.appendChild(p);
     });
@@ -673,13 +682,21 @@ function renderMap(){
   });
 }
 $("stamponly").onchange=renderMap;
+function openShopCard(x){
+  shopCat="all";shopArea="all";$$("#f-cat button,#f-area button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c==="all"||b.dataset.a==="all"));renderShops();showTab("shops");
+  const i=SHOPS.indexOf(x);const el=$("shops").children[i];if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="3px solid #f5b800";setTimeout(()=>el.style.outline="",1600)}
+}
 function select(x,scroll){
-  sel=x;const spot=spotOf(x);const got=spot&&stamps[spot.id];
-  $("info").innerHTML=`<span class="nm">${esc(x.by)}</span>${x.title!==x.by?`<span class="ev">${ttl(x.title)}</span>`:""}<span class="wh"><span class="nw">${esc(x.at)}</span></span>`
-    +(spot?`<span class="st">${got?"スタンプ済み "+fmt(got):"スタンプあり（まだ押していません）"}</span>`:"")
-    +'<button type="button" class="lk" id="infoshop">紹介を見る</button>';
-  $("infoshop").onclick=()=>{shopCat="all";shopArea="all";$$("#f-cat button,#f-area button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c==="all"||b.dataset.a==="all"));renderShops();showTab("shops");
-    const i=SHOPS.indexOf(x);const el=$("shops").children[i];if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="3px solid #f5b800";setTimeout(()=>el.style.outline="",1600)}};
+  const g=x.x!=null?groupOf(x):[x];sel=posKey(x);
+  const stampLine=y=>{const sp=spotOf(y);if(!sp)return"";const got=stamps[sp.id];return `<span class="st">${got?"スタンプ済み "+fmt(got):"スタンプあり（まだ押していません）"}</span>`};
+  if(g.length===1){
+    $("info").innerHTML=`<span class="nm">${esc(x.by)}</span>${x.title!==x.by?`<span class="ev">${ttl(x.title)}</span>`:""}<span class="wh"><span class="nw">${esc(x.at)}</span></span>`
+      +stampLine(x)+'<button type="button" class="lk" data-i="0">紹介を見る</button>';
+  }else{
+    $("info").innerHTML=`<span class="nm"><span class="nw">${esc(x.at)}</span></span>`
+      +g.map((y,i)=>`<div class="gi"><span class="ev">${ttl(y.title)}<small>（${esc(y.by)}）</small></span>${stampLine(y)}<button type="button" class="lk" data-i="${i}">紹介を見る</button></div>`).join("");
+  }
+  $$("#info .lk").forEach(b=>b.onclick=()=>openShopCard(g[+b.dataset.i]));
   renderMap();
   const vi=$("vinfo");vi.innerHTML=$("info").innerHTML;vi.hidden=false;$("vhint").hidden=true;
   if(!$("viewer").hidden)return;
