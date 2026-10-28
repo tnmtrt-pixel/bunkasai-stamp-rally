@@ -933,7 +933,7 @@ function tkFinish(){
   addEventListener("keydown",e=>{if(e.key==="Escape"&&document.documentElement.classList.contains("intro"))$("tkskip").click()});
   if(document.documentElement.classList.contains("intro"))tkOpen();else $("replay").hidden=!FEST.ticket;
 })();
-loadDisplayFont(SPOTS.map(x=>x.name+sname(x)).join("")+"記録を消す"+SHOPS.map(x=>x.by).join("")+"景品と交換できます！景品は受け取り済みです受取済QRを読み取る景品の受け取りSTAMPRALLY");
+loadDisplayFont(SPOTS.map(x=>x.name+sname(x)).join("")+SHOPS.map(x=>x.at+x.by+x.title).join("")+"記録を消す"+SHOPS.map(x=>x.by).join("")+"景品と交換できます！景品は受け取り済みです受取済QRを読み取る景品の受け取りSTAMPRALLY");
 
 // ほかのタブで押したスタンプを反映
 function syncStamps(){const cur=load();let ch=false;for(const k in cur)if(!stamps[k]){stamps[k]=cur[k];ch=true}if(ch)render()}
