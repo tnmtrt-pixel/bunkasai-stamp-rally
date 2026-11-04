@@ -571,7 +571,8 @@ const label=n=>n.replace("学年展示","学年\n展示").replace("工業科展�
 const shopOf=spot=>SHOPS.find(x=>x.rally===spot.name);
 // 台紙などに出す名前：shops.js の stamp（なければ教室名）
 const sname=s=>(shopOf(s)&&shopOf(s).stamp)||s.name;
-const roomOf=s=>{const x=shopOf(s);return x?String(x.at).replace(/^\S+\s*/,""):""};
+// 台紙の丸の下に出す場所：教室は番号（2301）、廊下などは階をつける（4階廊下）
+const roomOf=s=>{const x=shopOf(s);if(!x)return"";const at=String(x.at),r=at.replace(/^\S+\s*/,"");if(/^\d/.test(r))return r;const f=at.match(/(\d階)/);return (f?f[1]:"")+r};
 const spotOf=shop=>shop&&shop.rally?SPOTS.find(s=>s.name===shop.rally):null;
 const areaOf=shop=>String(shop.at||"").split(/\s/)[0];
 
