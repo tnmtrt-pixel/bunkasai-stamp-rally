@@ -454,6 +454,7 @@ html.intro body{overflow:hidden}
         <h2>景品は受け取り済みです</h2>
         <div class="seal"><div>受取済<small id="ptime"></small></div></div>
         <div class="now">ご参加ありがとうございました！</div>
+        <button type="button" class="ghost" id="unprize">受取済みを取り消す（本部用）</button>
       </div>
     </div>
     <button type="button" class="scanbtn" id="scanopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M7 12h10"/></svg>QRを読み取る</button>
@@ -846,7 +847,8 @@ function openStaff(s){
   $("sdesc").textContent=desk?"本部用番号（4桁）を入力すると、景品を受け取り済みにします。":"この場所の係用番号（4桁）を入力してください。";
   $("okbtn").textContent=desk?"受取済みにする":"押す";
   $("smap").hidden=desk;
-  current=s;$("sname").textContent=s.reset?"記録を消す":desk?"景品の受け取り":sname(s);
+  current=s;$("sname").textContent=s.reset?"記録を消す":s.unprize?"受取済みの取り消し":desk?"景品の受け取り":sname(s);
+  if(s.unprize){$("sdesc").textContent="本部用番号（4桁）を入力すると、景品の受取済みを取り消して、もう一度渡せる状態に戻します。";$("okbtn").textContent="取り消す"}
   if(s.reset){$("sdesc").textContent="本部用番号（4桁）を入力すると、このスマホのスタンプの記録をすべて消します。";$("okbtn").textContent="記録を消す"}
   const x=desk?null:shopOf(s);$("swhere").innerHTML=x?`${ttl(x.title)} ／ <span class="nw">${esc(x.at)}</span>`:"";$("pin").value="";$("err").textContent="";
   $("veil").hidden=false;setTimeout(()=>$("pin").focus(),50);
@@ -869,6 +871,10 @@ $("staff").addEventListener("submit",async e=>{
     return;
   }
   fails=0;
+  if(current.unprize){
+    prize=null;try{localStorage.removeItem(PKEY)}catch(e){}
+    closeStaff();render();toast("受取済みを取り消しました");return;
+  }
   if(current.reset){
     stamps={};resetting=true;save();resetting=false;closeStaff();render();toast("スタンプの記録を消しました");return;
   }
@@ -882,6 +888,7 @@ $("staff").addEventListener("submit",async e=>{
 // 記録を消すのは本部だけ（参加者の誤操作を防ぐ）
 $("reset").addEventListener("click",()=>openStaff(Object.assign({},RALLY.desk,{reset:true})));
 $("give").onclick=()=>openStaff(RALLY.desk);
+$("unprize").onclick=()=>openStaff(Object.assign({},RALLY.desk,{unprize:true}));
 setInterval(()=>{const d=new Date();$("now").textContent=`いまの時刻 ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`},1000);
 
 renderFest();
