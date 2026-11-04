@@ -558,11 +558,18 @@ const SHOPS=window.SHOPS||[];
 const FEST=window.FEST||{};
 const KEY="bunkasai-rally-2026";
 const PKEY="bunkasai-rally-2026-prize";  // 記録をリセットしても消えない
+// 本番前の試し押しを消す：FEST.resetBefore の時刻を過ぎたら、それより前に押したスタンプと景品の記録は使わない
+// （その時刻より前は、試しに押した記録もそのまま残るのでテストできる）
+const RESET_AT=FEST.resetBefore?Date.parse(FEST.resetBefore):0;
+const fresh=t=>!(RESET_AT&&Date.now()>=RESET_AT&&Number(t)<RESET_AT);
+const cleanStamps=o=>{const r={};for(const k in (o||{}))if(fresh(o[k]))r[k]=o[k];return r};
 let prize=null;
 try{prize=JSON.parse(localStorage.getItem(PKEY))}catch(e){prize=null}
+if(prize&&!fresh(prize)){prize=null;try{localStorage.removeItem(PKEY)}catch(e){}}
 let stamps={};
-try{stamps=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){stamps={}}
-const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}};
+try{stamps=cleanStamps(JSON.parse(localStorage.getItem(KEY)))}catch(e){stamps={}}
+try{localStorage.setItem(KEY,JSON.stringify(stamps))}catch(e){}
+const load=()=>{try{return cleanStamps(JSON.parse(localStorage.getItem(KEY)))}catch(e){return {}}};
 // 保存の前に、ほかのタブで押した分とまとめる（リセット直後は除く）
 let resetting=false;
 const save=()=>{try{const cur=resetting?{}:load();for(const k in cur)if(!stamps[k])stamps[k]=cur[k];localStorage.setItem(KEY,JSON.stringify(stamps))}catch(e){}};
