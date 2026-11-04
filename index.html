@@ -355,7 +355,7 @@ html.intro body{overflow:hidden}
       <div class="mk">STAMP<br>RALLY</div>
       <div class="tx">
         <b>スタンプラリー開催中</b>
-        <span>教室の出し物を体験してスタンプを集めよう。<span class="rally-n">9</span>か所のうち<span class="rally-goal">5</span>か所で、<span class="nw">文化祭本部</span><span class="nw">（2号館3階 2305）</span>で景品と交換できます</span>
+        <span>出し物を体験してスタンプを集めよう。<span class="rally-n">9</span>か所のうち<span class="rally-goal">5</span>か所で、<span class="nw">文化祭本部</span><span class="nw">（2号館3階 2305）</span>で景品と交換できます</span>
         <div class="mini"><div class="bar"><span id="hbar"></span></div><div class="count"><span id="hgot">0</span>/<span id="hden">5</span></div></div>
       </div>
     </button>
@@ -430,7 +430,7 @@ html.intro body{overflow:hidden}
   <section class="pane" id="pane-stamp" aria-label="スタンプラリー" hidden>
     <div>
       <h2 class="sec">スタンプラリー<small>STAMP RALLY</small></h2>
-      <p class="lead">教室内の<span class="rally-n">9</span>か所のうち、<b><span class="rally-goal">5</span>か所</b>のスタンプを集めると、<span class="nw">2号館3階 2305</span>の<b class="nw">文化祭本部</b>で景品と交換できます。スタンプは、その教室の出し物を体験するともらえます。</p>
+      <p class="lead"><span class="rally-n">9</span>か所のうち、<b><span class="rally-goal">5</span>か所</b>のスタンプを集めると、<span class="nw">2号館3階 2305</span>の<b class="nw">文化祭本部</b>で景品と交換できます。スタンプは、その場所の出し物を体験するともらえます。</p>
     </div>
     <div class="warnbox" id="inapp" hidden>
       <strong>Safari（またはChrome）で開き直してください</strong>
@@ -461,11 +461,11 @@ html.intro body{overflow:hidden}
     <div class="howto">
       <strong>スタンプのもらい方</strong>
       <ol>
-        <li>教室の出し物を体験する</li>
-        <li>体験が終わったら、係の人が教室の画面にQRコードを出してくれます</li>
+        <li>スタンプのある出し物を体験する</li>
+        <li>体験が終わったら、係の人が画面にQRコードを出してくれます</li>
         <li>上の「QRを読み取る」を押して、QRコードを枠に入れるとスタンプが押されます（はじめにカメラの許可を聞かれたら「許可」）</li>
       </ol>
-      <span style="color:var(--muted)">QRが読めないときは、教室の枠をタップしてスマホを係の人に渡してください。</span>
+      <span style="color:var(--muted)">QRが読めないときは、台紙のその場所の枠をタップしてスマホを係の人に渡してください。</span>
       <span style="color:var(--muted)">プライベートブラウズやLINEの中ではスタンプが消えることがあります。いつものSafariやChromeで、このページを開いたまま回ってください。</span>
     </div>
     <div class="resetbox"><button class="ghost" id="reset" type="button">記録を消す（本部用）</button><small>消すには本部用番号が必要です</small></div>
@@ -487,7 +487,7 @@ html.intro body{overflow:hidden}
     <h2 id="sname"></h2>
     <div class="where" id="swhere"></div>
     <button type="button" class="maplink" id="smap">地図で場所を見る</button>
-    <p id="sdesc">この教室の係用番号（4桁）を入力してください。</p>
+    <p id="sdesc">この場所の係用番号（4桁）を入力してください。</p>
     <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="係用番号">
     <div class="err" id="err" role="status"></div>
     <div class="btns">
@@ -513,7 +513,7 @@ html.intro body{overflow:hidden}
   <div class="vinfo" id="vinfo" hidden></div>
 </div>
 <div class="scanner" id="scanner" hidden role="dialog" aria-modal="true" aria-label="QRコードの読み取り">
-  <div class="shead"><strong>教室のQRコードを枠に入れてください</strong><button type="button" id="scanclose">やめる</button></div>
+  <div class="shead"><strong>出し物のQRコードを枠に入れてください</strong><button type="button" id="scanclose">やめる</button></div>
   <div class="sview"><video id="video" playsinline muted></video><div class="frame" aria-hidden="true"></div></div>
   <div class="smsg" id="smsg" role="status">カメラを準備しています…</div>
 </div>
@@ -634,7 +634,7 @@ function render(newId){
   });
   const n=SPOTS.filter(s=>stamps[s.id]).length,N=SPOTS.length,G=Math.min(N,FEST.rallyGoal||N);
   $$(".rally-n").forEach(e=>e.textContent=N);$$(".rally-goal").forEach(e=>e.textContent=G);
-  $("left").textContent=n>=N?"全部の教室をまわりました！":n>=G?`景品と交換できます！ 残り${N-n}か所もまわってみよう`:`あと${G-n}か所で景品と交換できます`;
+  $("left").textContent=n>=N?"スタンプを全部集めました！":n>=G?`景品と交換できます！ 残り${N-n}か所もまわってみよう`:`あと${G-n}か所で景品と交換できます`;
   $("got").textContent=n;$("hgot").textContent=n;
   // 景品の数までは「n/5」、達成後は「n/9」で表示
   const den=n>=G?N:G;$("total").textContent=$("hden").textContent=den;
@@ -696,8 +696,8 @@ function renderMap(){
     const box=$(bid);box.querySelectorAll(".area").forEach(p=>p.remove());box.classList.toggle("only",only);
     groups.forEach(g=>{
       const x=g.find(y=>spotOf(y))||g[0];
-      const spot=spotOf(x);
-      const got=spot&&stamps[spot.id];
+      const sps=g.map(spotOf).filter(Boolean);const spot=sps[0];
+      const got=sps.length>0&&sps.every(sp=>stamps[sp.id]);  // 同じ枠のスタンプが全部押されたら✓
       x.box.forEach(r=>{
         const p=document.createElement("button");p.type="button";
         p.className="area"+(spot?" st":"")+(got?" got":"")+(sel===posKey(x)?" sel":"");
@@ -835,7 +835,7 @@ function openStaff(s){
   if(s.id!=="desk"&&stamps[s.id]){toast(`${sname(s)} はもう押してあります`);return}
   const desk=s.id==="desk";
   $("stag").textContent=desk?"本部の人が入力してください":"係の人が入力してください";
-  $("sdesc").textContent=desk?"本部用番号（4桁）を入力すると、景品を受け取り済みにします。":"この教室の係用番号（4桁）を入力してください。";
+  $("sdesc").textContent=desk?"本部用番号（4桁）を入力すると、景品を受け取り済みにします。":"この場所の係用番号（4桁）を入力してください。";
   $("okbtn").textContent=desk?"受取済みにする":"押す";
   $("smap").hidden=desk;
   current=s;$("sname").textContent=s.reset?"記録を消す":desk?"景品の受け取り":sname(s);

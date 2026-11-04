@@ -51,8 +51,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 <div class="screen">
   <form class="setup" id="setup" autocomplete="off">
     <h1>QR表示の準備</h1>
-    <p>この画面を教室に置くPCやタブレットで開き、教室を選んで係用番号を入力してください。</p>
-    <label>教室<select id="room"></select></label>
+    <p>この画面を出し物の場所に置くPCやタブレットで開き、場所を選んで係用番号を入力してください。</p>
+    <label>場所<select id="room"></select></label>
     <label>係用番号<input id="pin" type="password" inputmode="numeric" maxlength="4"></label>
     <div class="err" id="err" role="status"></div>
     <button type="submit">QRを表示する</button>
@@ -71,7 +71,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
     <div class="foot">
       <span>QRは<span id="step"></span>秒ごとに切り替わります</span>
       <button type="button" id="full">全画面</button>
-      <button type="button" id="back">教室を変える</button>
+      <button type="button" id="back">場所を変える</button>
     </div>
     <div class="url" id="url" hidden></div>
   </div>
