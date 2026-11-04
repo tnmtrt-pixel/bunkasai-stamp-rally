@@ -209,19 +209,21 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:4px}
 .legend .l-got{background:var(--shu)}
 .legend .l-not{background:var(--card);border:2px solid var(--shu)}
-.legend .l-shop{background:var(--ai)}
 .toggle{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer}
 .toggle input{width:18px;height:18px;accent-color:var(--shu)}
 .mapscroll{position:relative;overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch;max-height:75vh}
 .mapbox{position:relative;width:100%;line-height:0}
 .mapbox img{width:100%;height:auto;max-width:none;display:block;cursor:zoom-in}
-.pin{position:absolute;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;border:2px solid #fff;background:#26457a;color:#fff;
-  font:700 10px/16px var(--body);text-align:center;padding:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.pin::after{content:"";position:absolute;inset:-6px}
-.pin.st{border-color:#d8432e;background:rgba(255,255,255,.95);color:#d8432e}
-.pin.got{background:#d8432e;border-color:#fff;color:#fff}
-.pin.sel{outline:3px solid #f5b800;outline-offset:2px;z-index:2}
-.pin:focus-visible{outline:3px solid #f5b800;outline-offset:2px}
+.area{position:absolute;padding:0;margin:0;border:0;background:transparent;cursor:pointer;border-radius:3px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.area:active{background:rgba(245,184,0,.28)}
+.area.got{background:rgba(216,67,46,.14)}
+.area.sel{outline:3px solid #f5b800;outline-offset:0;background:rgba(245,184,0,.2);z-index:2}
+.area:focus-visible{outline:3px solid #f5b800}
+.area .mk{position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;border:2px solid #d8432e;background:#fff;color:#fff;font:700 7px/7px var(--body);text-align:center;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.area.got .mk{background:#d8432e;border-color:#fff}
+.mapbox.only .area:not(.st){display:none}
+.mapbox.only .area.st{outline:2px solid #d8432e;outline-offset:-1px}
+.mapbox.only .area.st.sel{outline:3px solid #f5b800}
 .mapcorner{position:absolute;right:8px;bottom:8px;font:700 12px var(--body);padding:5px 9px;border-radius:999px;background:rgba(29,42,58,.82);color:#fff;border:0;cursor:pointer;line-height:1.2}
 .fsbtn{font:inherit;font-weight:700;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid var(--ai);background:var(--card);color:var(--ai);cursor:pointer}
 .fsbtn:focus-visible{outline:3px solid var(--shu);outline-offset:2px}
@@ -249,7 +251,8 @@ button.ghost:focus-visible{outline:2px solid var(--ai)}
 .vrot{position:relative}
 .vrot .mapbox{position:absolute;left:0;top:0;transform-origin:0 0;background:#fff}
 .vrot .mapbox img{width:100%;height:100%;cursor:grab;-webkit-user-drag:none;user-select:none}
-.viewer .pin{width:22px;height:22px;font-size:12px;line-height:18px;transform:translate(-50%,-50%) rotate(var(--pr,0deg)) scale(var(--is,1))}
+.viewer .area.sel{outline-width:calc(3px * var(--is,1))}
+.viewer .area .mk{width:18px;height:18px;font-size:11px;line-height:14px;transform:rotate(var(--pr,0deg)) scale(var(--is,1))}
 .vbar{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;gap:8px;
   padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));
   background:linear-gradient(rgba(16,21,28,.85),rgba(16,21,28,0));pointer-events:none}
@@ -405,7 +408,7 @@ html.intro body{overflow:hidden}
   <section class="pane" id="pane-map" aria-label="会場マップ" hidden>
     <h2 class="sec">会場マップ<small>MAP</small></h2>
     <div class="maptools">
-      <div class="legend"><span><i class="l-shop"></i>出し物</span><span><i class="l-not"></i>スタンプ</span><span><i class="l-got"></i>押した</span></div>
+      <div class="legend"><span><i class="l-not"></i>スタンプあり</span><span><i class="l-got"></i>押した</span></div>
       <button type="button" class="fsbtn" id="fsopen">全画面で見る</button>
     </div>
     <label class="toggle"><input type="checkbox" id="stamponly">スタンプの場所だけ表示</label>
@@ -416,7 +419,7 @@ html.intro body{overflow:hidden}
       </div>
       <div class="info pop" id="info" hidden role="status"></div>
     </div>
-    <p class="maphint">丸をタップすると、出し物と場所が地図の上に出ます。</p>
+    <p class="maphint">地図の店名の枠をタップすると、紹介が地図の上に出ます。</p>
     <div class="todo">
       <h3>スタンプがまだのところ</h3>
       <div class="chips" id="chips"></div>
@@ -671,8 +674,8 @@ function renderShops(){
       ${x.desc?`<p>${phr(x.desc).replace(/\n/g,"<br>")}</p>`:'<p class="empty">紹介文は準備中です</p>'}
       ${x.menu&&x.menu.length?`<table class="menu">${x.menu.map(m=>`<tr><td>${esc(m[0])}</td><td>${esc(m[1])}</td></tr>`).join("")}</table>`:""}
       ${x.note?`<div class="note">${phr(x.note)}</div>`:""}
-      ${x.x!=null?'<button type="button" class="go">地図で見る</button>':""}`;
-    if(x.x!=null)el.querySelector(".go").onclick=()=>{showTab("map");select(x)};
+      ${x.box?'<button type="button" class="go">地図で見る</button>':""}`;
+    if(x.box)el.querySelector(".go").onclick=()=>{showTab("map");select(x)};
     list.appendChild(el);
   });
 }
@@ -681,26 +684,29 @@ $$("#f-area button").forEach(b=>b.onclick=()=>{shopArea=b.dataset.a;$$("#f-area 
 
 // ===== マップ =====
 let sel=null;
-// 地図の印：同じ場所（x,y が同じ）の出し物は1つの印にまとめる
-const posKey=x=>`${x.x},${x.y}`;
-const groupOf=x=>SHOPS.filter(y=>y.x!=null&&posKey(y)===posKey(x));
+// 地図の枠：shops.js の box（地図に描かれた店の四角）をそのままタップできる範囲にする
+// 同じ枠の出し物は1つにまとめる
+const posKey=x=>x&&x.box?JSON.stringify(x.box[0]):"";
+const groupOf=x=>x.box?SHOPS.filter(y=>y.box&&posKey(y)===posKey(x)):[x];
 function renderMap(){
   const only=$("stamponly").checked;
   const groups=[];const seen=new Set();
-  SHOPS.forEach(x=>{if(x.x==null||seen.has(posKey(x)))return;seen.add(posKey(x));groups.push(groupOf(x))});
+  SHOPS.forEach(x=>{if(!x.box||seen.has(posKey(x)))return;seen.add(posKey(x));groups.push(groupOf(x))});
   ["mapbox","vmap"].forEach(bid=>{
-    const box=$(bid);box.querySelectorAll(".pin").forEach(p=>p.remove());
+    const box=$(bid);box.querySelectorAll(".area").forEach(p=>p.remove());box.classList.toggle("only",only);
     groups.forEach(g=>{
       const x=g.find(y=>spotOf(y))||g[0];
-      const spot=spotOf(x);if(only&&!spot)return;
+      const spot=spotOf(x);
       const got=spot&&stamps[spot.id];
-      const p=document.createElement("button");p.type="button";
-      p.className="pin"+(spot?" st":"")+(got?" got":"")+(sel===posKey(x)?" sel":"");
-      p.style.left=x.x+"%";p.style.top=x.y+"%";
-      p.textContent=got?"✓":"";
-      p.setAttribute("aria-label",g.map(y=>`${y.by} ${y.title}`).join("、")+(spot?`（スタンプ${got?"押した":"まだ"}）`:""));
-      p.onclick=()=>select(x);
-      box.appendChild(p);
+      x.box.forEach(r=>{
+        const p=document.createElement("button");p.type="button";
+        p.className="area"+(spot?" st":"")+(got?" got":"")+(sel===posKey(x)?" sel":"");
+        p.style.left=r[0]+"%";p.style.top=r[1]+"%";p.style.width=r[2]+"%";p.style.height=r[3]+"%";
+        if(spot)p.innerHTML=`<span class="mk">${got?"✓":""}</span>`;
+        p.setAttribute("aria-label",g.map(y=>`${y.by} ${y.title}`).join("、")+(spot?`（スタンプ${got?"押した":"まだ"}）`:""));
+        p.onclick=()=>select(x);
+        box.appendChild(p);
+      });
     });
   });
   const rest=SPOTS.filter(s=>!stamps[s.id]);
@@ -720,7 +726,7 @@ function openShopCard(x){
   const el=$("shops").querySelector(`.shop[data-i="${SHOPS.indexOf(x)}"]`);if(el){el.scrollIntoView({behavior:"smooth",block:"start"});el.style.outline="3px solid #f5b800";setTimeout(()=>el.style.outline="",1600)}
 }
 function select(x,scroll){
-  const g=x.x!=null?groupOf(x):[x];sel=posKey(x);
+  const g=groupOf(x);sel=posKey(x);
   const stampLine=y=>{const sp=spotOf(y);if(!sp)return"";const got=stamps[sp.id];return `<span class="st">${got?"スタンプ済み "+fmt(got):"スタンプあり（まだ押していません）"}</span>`};
   if(g.length===1){
     $("info").innerHTML=`<span class="nm">${esc(x.by)}</span>${x.title!==x.by?`<span class="ev">${ttl(x.title)}</span>`:""}<span class="wh"><span class="nw">${esc(x.at)}</span></span>`
@@ -737,7 +743,7 @@ function select(x,scroll){
   const vi=$("vinfo");vi.innerHTML=$("info").innerHTML;vi.hidden=false;$("vhint").hidden=true;
   if(!$("viewer").hidden)return;
   const sc=$("mapscroll");
-  if(x.x!=null){const img=$("mapbox");sc.scrollTo({left:img.offsetWidth*x.x/100-sc.clientWidth/2,top:img.offsetHeight*x.y/100-sc.clientHeight/2,behavior:"smooth"})}
+  if(x.box){const r=x.box[0],img=$("mapbox");sc.scrollTo({left:img.offsetWidth*(r[0]+r[2]/2)/100-sc.clientWidth/2,top:img.offsetHeight*(r[1]+r[3]/2)/100-sc.clientHeight*0.3,behavior:"smooth"})}
   if(scroll)sc.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -812,7 +818,7 @@ function ptrUp(e){
   const q=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);gest=gSnap();
   if(!q||e.type!=="pointerup"||ptrs.size)return;
   const moved=Math.hypot(e.clientX-q.sx,e.clientY-q.sy)>10;
-  if(moved||e.target.closest(".pin"))return;
+  if(moved||e.target.closest(".area"))return;
   const now=Date.now();
   if(now-lastTap<320){lastTap=0;if(V.s>1.2)vLayout(false);else vZoomAt(e.clientX,e.clientY,2.5)}
   else lastTap=now;
