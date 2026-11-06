@@ -1022,3 +1022,8 @@ $("scanopen").onclick=openScanner;
 $("scanclose").onclick=closeScanner;
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&scanning)closeScanner()});
 </script>
+<script>
+// オフライン対応：一度開いた端末では、電波がなくても開けるようにする（sw.js）
+if("serviceWorker" in navigator){addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+

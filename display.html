@@ -169,5 +169,10 @@ function loadDisplayFont(extra){
 }
 loadDisplayFont(RALLY.spots.map(x=>x.name).join("")+"QR表示の準備");
 </script>
+<script>
+// オフライン対応：一度開いた端末では、電波がなくても開けるようにする（sw.js）
+if("serviceWorker" in navigator){addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+
 </body>
 </html>
