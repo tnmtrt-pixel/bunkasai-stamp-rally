@@ -74,20 +74,27 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
       <button type="button" id="back">場所を変える</button>
     </div>
     <div class="url" id="url" hidden></div>
+    <div class="url" id="diag"></div>
   </div>
 </div>
 
-<script src="qrcode.js"></script><!-- QRコード作成（サイト内に置いて、外部サイトの読み込みに頼らない） -->
-<script src="config.js"></script>
+<script src="qrcode.js?v=20261106b"></script><!-- QRコード作成（サイト内に置いて、外部サイトの読み込みに頼らない） -->
+<script src="config.js?v=20261106b"></script>
 <script>
 const $=id=>document.getElementById(id);
+const VERSION="20261106b";
+// 思わぬエラーが起きたら画面に出す（スクリーンショットで原因がわかるように）
+let lastErr="";
+addEventListener("error",e=>{lastErr=String(e.message||e.error||"");showDiag()});
+addEventListener("unhandledrejection",e=>{lastErr=String(e.reason&&e.reason.message||e.reason||"");showDiag()});
+function showDiag(){const d=document.getElementById("diag");if(d)d.textContent=`版 ${VERSION}`+(lastErr?` ／ エラー: ${lastErr}`:"")}
 const base=new URL("index.html",location.href).href;
 RALLY.spots.forEach(s=>{const o=document.createElement("option");o.value=s.id;o.textContent=s.name;$("room").appendChild(o)});
 try{const r=localStorage.getItem("rally-display-room");if(r)$("room").value=r}catch(e){}
 $("step").textContent=RALLY.step;
 let spot=null,lastW=null,wake=null,qr=null,hideAt=0;
 const SHOW=RALLY.reveal||20;  // QRを表示しておく秒数
-$("reveal").onclick=()=>{hideAt=Date.now()+SHOW*1000};
+$("reveal").onclick=()=>{hideAt=Date.now()+SHOW*1000;lastW=null;tick()};  // 押したらすぐ描き直して表示
 
 $("setup").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -118,12 +125,21 @@ function drawQR(text){
     box.innerHTML='<p style="line-height:1.6;font-size:16px;color:#d8432e;padding:20px">QRコードを作れませんでした。<br>ページを再読み込みしてください。<br>直らないときは、来場者のスマホで台紙の枠をタップし、係用番号で押してください。</p>';
   }
 }
+let lastTick=0,ticking=false;
 async function tick(){
-  if(!spot)return;
+  if(!spot||ticking)return;
+  ticking=true;
+  try{await tickBody()}catch(e){lastErr=String(e&&e.message||e);showDiag()}
+  ticking=false;lastTick=Date.now();
+  clearTimeout(tick.t);tick.t=setTimeout(tick,250);
+}
+// 画面の更新が止まっていたら（スリープ明けなど）、自動で再開する
+setInterval(()=>{if(spot&&!ticking&&Date.now()-lastTick>2000){lastW=null;tick()}},1000);
+async function tickBody(){
   const now=Date.now(),w=RALLY.win(now);
   if(w!==lastW){
     let c="";
-    try{c=await RALLY.code(spot,w)}catch(e){setTimeout(tick,1000);return}
+    try{c=await RALLY.code(spot,w)}catch(e){lastErr="暗号の計算ができません（https で開いてください）";showDiag();return}
     lastW=w;
     const url=`${base}?s=${spot.id}&w=${w}&c=${c}`;
     drawQR(url);
@@ -133,12 +149,12 @@ async function tick(){
   $("rmsg").textContent=open?`あと${Math.ceil((hideAt-now)/1000)}秒で隠れます`:"";
   const left=1-((now/1000)%RALLY.step)/RALLY.step;
   $("bar").style.width=(left*100)+"%";
-  setTimeout(tick,250);
 }
 async function keepAwake(){
   try{wake=await navigator.wakeLock.request("screen")}catch(e){}
 }
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&spot)keepAwake()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&spot){keepAwake();lastW=null;tick()}});
+showDiag();
 
 // 見出し用フォント（Dela Gothic One）は、このページで使う文字だけを1ファイルで読み込む。
 // 日本語フォントの小分け読み込みで、文字ごとにフォントが混ざって崩れるのを防ぐ。
